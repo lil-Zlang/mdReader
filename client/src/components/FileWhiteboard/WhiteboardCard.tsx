@@ -6,6 +6,7 @@ export interface FileData {
   name: string;
   path: string;
   metadata: { size: number };
+  contentPreview?: string;
 }
 
 interface WhiteboardCardProps {
@@ -60,17 +61,32 @@ export default function WhiteboardCard({
       onMouseLeave={onMouseLeave}
       onClick={onClick}
     >
-      <div className={styles.cardContent}>
-        <div className={styles.icon}>📄</div>
-        <div className={styles.info}>
+      {/* Header section with file info */}
+      <div className={styles.cardHeader}>
+        <div className={styles.cardHeaderLeft}>
+          <span className={styles.icon}>📄</span>
           <h4 className={styles.name} title={file.name}>
             {file.name}
           </h4>
-          <p className={styles.size}>{formatFileSize(file.metadata.size)}</p>
+        </div>
+        <div className={styles.cardHeaderRight}>
           {connectionCount > 0 && (
-            <div className={styles.connectionBadge}>{connectionCount}</div>
+            <div className={styles.connectionBadge} title={`${connectionCount} connections`}>
+              {connectionCount}↔
+            </div>
           )}
         </div>
+      </div>
+
+      {/* Content preview section */}
+      <div className={styles.cardPreview}>
+        {file.contentPreview ? (
+          <p className={styles.previewText}>{file.contentPreview}</p>
+        ) : (
+          <p className={styles.previewPlaceholder}>
+            <span className={styles.sizeInfo}>{formatFileSize(file.metadata.size)}</span>
+          </p>
+        )}
       </div>
 
       {/* Color indicator bar */}

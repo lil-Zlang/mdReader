@@ -14,12 +14,25 @@ export default function App() {
     if (saved) {
       try {
         const config = JSON.parse(saved);
-        setMarkdownFolderPath(config.markdownFolderPath);
+        // Notify server of the saved folder path
+        fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(config),
+        }).then(() => {
+          setMarkdownFolderPath(config.markdownFolderPath);
+          setLoading(false);
+        }).catch((error) => {
+          console.error("Failed to configure server:", error);
+          setLoading(false);
+        });
       } catch (e) {
         console.error("Failed to parse config:", e);
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const handleFolderSelected = async (path: string) => {

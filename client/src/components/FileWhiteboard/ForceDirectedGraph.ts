@@ -26,7 +26,7 @@ export interface ForceParams {
 
 const DEFAULT_PARAMS: ForceParams = {
   linkStrength: 0.1,
-  repulsionStrength: 300,
+  repulsionStrength: 400, // Increased for larger cards
   centerGravity: 0.02,
   damping: 0.8,
   maxVelocity: 5,
@@ -68,8 +68,8 @@ export class ForceDirectedGraph {
         const cols = Math.ceil(Math.sqrt(nodeIds.length));
         const col = index % cols;
         const row = Math.floor(index / cols);
-        x = col * 250 + 100;
-        y = row * 150 + 100;
+        x = col * 320 + 100; // Increased spacing for larger cards (280px + 40px gap)
+        y = row * 200 + 100; // Increased spacing for larger cards (160px + 40px gap)
       } else {
         // Random position within bounds with some padding
         const padding = 100;
@@ -122,7 +122,7 @@ export class ForceDirectedGraph {
         const dx = nodeB.x - nodeA.x;
         const dy = nodeB.y - nodeA.y;
         const distance = Math.sqrt(dx * dx + dy * dy) || 1;
-        const minDistance = 150; // Minimum distance before repulsion
+        const minDistance = 250; // Minimum distance before repulsion (increased for larger cards)
 
         if (distance < minDistance * 3) {
           // Only repel if reasonably close
@@ -151,7 +151,7 @@ export class ForceDirectedGraph {
       const dx = nodeB.x - nodeA.x;
       const dy = nodeB.y - nodeA.y;
       const distance = Math.sqrt(dx * dx + dy * dy) || 1;
-      const targetDistance = 150; // Desired distance between connected nodes
+      const targetDistance = 200; // Desired distance between connected nodes (increased for larger cards)
 
       const attractionForce =
         this.params.linkStrength * (distance - targetDistance);

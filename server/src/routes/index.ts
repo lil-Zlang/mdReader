@@ -1,12 +1,14 @@
 import { Router } from "express";
-import { listFiles, getFile } from "../controllers/fileController.js";
+import { listFiles, getFile, createFileHandler, updateFileHandler } from "../controllers/fileController.js";
 import { getFileBacklinks } from "../controllers/backlinkController.js";
 import { searchFiles } from "../controllers/searchController.js";
 
 const router = Router();
 
 router.get("/files", listFiles);
+router.post("/files", createFileHandler);
 router.get("/files/:fileId", getFile);
+router.put("/files/:fileId", updateFileHandler);
 router.get("/backlinks/:fileId", getFileBacklinks);
 router.get("/search", searchFiles);
 

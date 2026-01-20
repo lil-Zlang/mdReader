@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { scanMarkdownFiles, getFileContent } from "../services/fileService.js";
+import { scanMarkdownFiles, getFileContent, createFile, updateFile } from "../services/fileService.js";
 
 let currentFolderPath: string | null = null;
 
@@ -41,5 +41,67 @@ export async function getFile(req: Request, res: Response) {
   } catch (error) {
     console.error("Error reading file:", error);
     res.status(500).json({ error: "Failed to read file" });
+  }
+}
+
+export async function createFileHandler(req: Request, res: Response) {
+  const { fileName, content = "", folder = "" } = req.body;
+
+  if (!currentFolderPath) {
+    return res.status(400).json({ error: "No folder configured" });
+  }
+
+  if (!fileName) {
+    return res.status(400).json({ error: "Missing fileName" });
+  }
+
+  try {
+    const result = await createFile(currentFolderPath, fileName, content, folder);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.status(201).json({
+      success: true,
+      fileId: result.fileId,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error("Error creating file:", error);
+    res.status(500).json({ error: "Failed to create file" });
+  }
+}
+
+export async function updateFileHandler(req: Request, res: Response) {
+  const { fileId } = req.params;
+  const { content } = req.body;
+
+  if (!currentFolderPath) {
+    return res.status(400).json({ error: "No folder configured" });
+  }
+
+  if (!fileId) {
+    return res.status(400).json({ error: "Missing fileId" });
+  }
+
+  if (content === undefined) {
+    return res.status(400).json({ error: "Missing content" });
+  }
+
+  try {
+    const result = await updateFile(currentFolderPath, fileId, content);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error("Error updating file:", error);
+    res.status(500).json({ error: "Failed to update file" });
   }
 }

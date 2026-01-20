@@ -10,6 +10,9 @@ interface FileWhiteboardProps {
   folderPath?: string;
 }
 
+// Minimum pixels moved to count as a drag (not a click)
+const DRAG_THRESHOLD = 5;
+
 export default function FileWhiteboard({
   files,
   onFileSelect,
@@ -32,12 +35,19 @@ export default function FileWhiteboard({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
 
+  // Track if we actually dragged (to distinguish from click)
+  const draggedRef = useRef(false);
+  const mouseDownPosRef = useRef<CardPosition | null>(null);
+
   // Handle card drag
   const handleCardMouseDown = (fileId: string, e: React.MouseEvent) => {
     if (e.button !== 0) return; // Only left click
     e.preventDefault();
+    e.stopPropagation();
     setDraggingCard(fileId);
     setDraggingStart({ x: e.clientX, y: e.clientY });
+    mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
+    draggedRef.current = false;
     setSelectedFile(fileId);
   };
 
@@ -47,6 +57,16 @@ export default function FileWhiteboard({
       if (draggingCard && draggingStart && canvasRef.current) {
         const deltaX = (e.clientX - draggingStart.x) / zoom;
         const deltaY = (e.clientY - draggingStart.y) / zoom;
+
+        // Check if we've moved enough to count as a drag
+        if (mouseDownPosRef.current) {
+          const totalDeltaX = Math.abs(e.clientX - mouseDownPosRef.current.x);
+          const totalDeltaY = Math.abs(e.clientY - mouseDownPosRef.current.y);
+          if (totalDeltaX > DRAG_THRESHOLD || totalDeltaY > DRAG_THRESHOLD) {
+            draggedRef.current = true;
+          }
+        }
+
         const currentPos = state.positions[draggingCard] || { x: 0, y: 0 };
 
         updateNodePosition(
@@ -62,6 +82,7 @@ export default function FileWhiteboard({
     const handleMouseUp = () => {
       setDraggingCard(null);
       setDraggingStart(null);
+      mouseDownPosRef.current = null;
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -78,6 +99,17 @@ export default function FileWhiteboard({
     updateNodePosition,
     zoom,
   ]);
+
+  // Handle card click (only if not dragged)
+  const handleCardClick = (fileId: string) => {
+    if (draggedRef.current) {
+      // Was a drag, not a click - reset and ignore
+      draggedRef.current = false;
+      return;
+    }
+    setSelectedFile(fileId);
+    onFileSelect?.(fileId);
+  };
 
   // Handle zoom with mouse wheel
   const handleWheel = (e: React.WheelEvent) => {
@@ -118,7 +150,7 @@ export default function FileWhiteboard({
   const renderConnections = () => {
     if (state.loading || state.connections.length === 0) return null;
 
-    return state.connections.map((conn) => {
+    return state.connections.map((conn, index) => {
       const fromPos = state.positions[conn.from];
       const toPos = state.positions[conn.to];
 
@@ -140,6 +172,7 @@ export default function FileWhiteboard({
           isHovered={isHovered}
           isRelated={isRelated || false}
           connectionCount={connectionCount}
+          connectionIndex={index}
           onHover={(hovered) => {
             setHoveredLine(hovered ? `${conn.from}-${conn.to}` : null);
           }}
@@ -184,15 +217,18 @@ export default function FileWhiteboard({
 
         <div
           style={{
-            position: "relative",
+            position: "absolute",
+            top: 0,
+            left: 0,
             width: "100%",
             height: "100%",
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             transformOrigin: "0 0",
-            pointerEvents: "auto",
+            zIndex: 10,
+            pointerEvents: "none",
           }}
         >
-          {files.map((file) => {
+          {state.filesWithPreviews.map((file) => {
             const pos = state.positions[file.id];
             if (!pos) return null;
 
@@ -209,10 +245,7 @@ export default function FileWhiteboard({
                 onMouseDown={(e) => handleCardMouseDown(file.id, e)}
                 onMouseEnter={() => setHoveredFile(file.id)}
                 onMouseLeave={() => setHoveredFile(null)}
-                onClick={() => {
-                  setSelectedFile(file.id);
-                  onFileSelect?.(file.id);
-                }}
+                onClick={() => handleCardClick(file.id)}
               />
             );
           })}

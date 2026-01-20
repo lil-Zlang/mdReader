@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import MarkdownViewer from "../MarkdownViewer/MarkdownViewer";
 import Breadcrumb from "../Breadcrumb/Breadcrumb";
 import TableOfContents from "../TableOfContents/TableOfContents";
-import BacklinksPanel from "../BacklinksPanel/BacklinksPanel";
 import SearchBar from "../SearchBar/SearchBar";
 import Toast from "../Toast/Toast";
 import EmptyFilesManager from "../EmptyFilesManager/EmptyFilesManager";
 import FileWhiteboard from "../FileWhiteboard/FileWhiteboard";
+import NewEntryModal from "../NewEntryModal/NewEntryModal";
 import { useNavigationHistory } from "../../hooks/useNavigationHistory";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import styles from "./Layout.module.css";
@@ -34,11 +34,11 @@ export default function Layout({ folderPath }: LayoutProps) {
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>("");
   const [showTOC, setShowTOC] = useState(true);
-  const [showBacklinks, setShowBacklinks] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [scrollToHeading, setScrollToHeading] = useState<string | null>(null);
+  const [scrollToHeading, setScrollToHeading] = useState<{ id: string; timestamp: number } | null>(null);
   const [showEmptyFiles, setShowEmptyFiles] = useState(false);
   const [showFlowChart, setShowFlowChart] = useState(false);
+  const [showNewEntry, setShowNewEntry] = useState(false);
   const [toasts, setToasts] = useState<
     Array<{ id: string; message: string; type: "info" | "success" | "warning" | "error" }>
   >([]);
@@ -115,6 +115,11 @@ export default function Layout({ folderPath }: LayoutProps) {
         e.preventDefault();
         setIsSearchOpen(!isSearchOpen);
       }
+      // Ctrl+N or Cmd+N for new entry
+      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+        e.preventDefault();
+        setShowNewEntry(true);
+      }
       // Alt+Left for back
       if (e.altKey && e.key === "ArrowLeft") {
         e.preventDefault();
@@ -175,6 +180,13 @@ export default function Layout({ folderPath }: LayoutProps) {
           <h1>mdReader</h1>
           <div className={styles.headerControls}>
             <button
+              className={styles.newButton}
+              onClick={() => setShowNewEntry(true)}
+              title="New Entry (Cmd+N)"
+            >
+              + New
+            </button>
+            <button
               className={styles.navButton}
               disabled={!navigation.canGoBack}
               onClick={() => {
@@ -202,13 +214,6 @@ export default function Layout({ folderPath }: LayoutProps) {
               title="Toggle TOC (Ctrl+T)"
             >
               {showTOC ? "Hide TOC" : "Show TOC"}
-            </button>
-            <button
-              className={styles.tocToggle}
-              onClick={() => setShowBacklinks(!showBacklinks)}
-              title="Toggle Backlinks"
-            >
-              {showBacklinks ? "Hide Links" : "Show Links"}
             </button>
             <button
               className={styles.tocToggle}
@@ -262,8 +267,9 @@ export default function Layout({ folderPath }: LayoutProps) {
                     selectedFileId === file.id ? styles.active : ""
                   }`}
                   onClick={() => handleFileSelect(file.id)}
+                  title={file.relativePath}
                 >
-                  <span className={styles.fileName}>{file.name}</span>
+                  <span className={styles.fileName}>{file.relativePath}</span>
                 </li>
               ))}
             </ul>
@@ -280,20 +286,15 @@ export default function Layout({ folderPath }: LayoutProps) {
               <MarkdownViewer
                 fileId={selectedFile.id}
                 fileName={selectedFile.name}
-                scrollToHeading={scrollToHeading || undefined}
+                scrollToHeading={scrollToHeading?.id}
+                scrollKey={scrollToHeading?.timestamp}
               />
             )}
           </main>
           {showTOC && selectedFile && (
             <TableOfContents
               content={fileContent}
-              onScroll={(headingId) => setScrollToHeading(headingId)}
-            />
-          )}
-          {showBacklinks && selectedFile && (
-            <BacklinksPanel
-              fileId={selectedFile.id}
-              onNavigate={(fileId) => handleFileSelect(fileId)}
+              onScroll={(headingId) => setScrollToHeading({ id: headingId, timestamp: Date.now() })}
             />
           )}
         </div>
@@ -341,6 +342,36 @@ export default function Layout({ folderPath }: LayoutProps) {
             },
           ]);
         }}
+      />
+
+      {/* New Entry Modal */}
+      <NewEntryModal
+        isOpen={showNewEntry}
+        onClose={() => setShowNewEntry(false)}
+        onSuccess={(message) => {
+          setToasts((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              message,
+              type: "success",
+            },
+          ]);
+          // Refresh file list
+          const fetchFiles = async () => {
+            try {
+              const response = await fetch("/api/files");
+              if (response.ok) {
+                const data = await response.json();
+                setFiles(data);
+              }
+            } catch (err) {
+              console.error("Error refreshing files:", err);
+            }
+          };
+          fetchFiles();
+        }}
+        currentFolder={folderPath}
       />
     </div>
   );

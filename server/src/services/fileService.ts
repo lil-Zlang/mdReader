@@ -1,6 +1,6 @@
 import { glob } from "glob";
-import { readFile, stat } from "fs/promises";
-import { resolve, relative, basename } from "path";
+import { readFile, stat, writeFile, mkdir } from "fs/promises";
+import { resolve, relative, basename, dirname } from "path";
 
 export interface CachedFile {
   id: string;
@@ -95,4 +95,84 @@ export async function getFileContent(
 
 export function clearCache() {
   fileCache.clear();
+}
+
+export async function createFile(
+  folderPath: string,
+  fileName: string,
+  content: string = "",
+  subfolder: string = ""
+): Promise<{ success: boolean; fileId: string; message?: string }> {
+  try {
+    // Sanitize filename
+    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
+
+    // Determine full path
+    const targetDir = subfolder
+      ? resolve(folderPath, subfolder)
+      : folderPath;
+
+    const filePath = resolve(targetDir, sanitizedFileName);
+
+    // Security check: ensure path is within folderPath
+    if (!filePath.startsWith(resolve(folderPath))) {
+      throw new Error("Path traversal attempt detected");
+    }
+
+    // Create directory if it doesn't exist
+    await mkdir(dirname(filePath), { recursive: true });
+
+    // Write the file
+    await writeFile(filePath, content, "utf-8");
+
+    // Clear cache to force refresh
+    clearCache();
+
+    const fileId = relative(folderPath, filePath);
+
+    return {
+      success: true,
+      fileId,
+      message: `Created: ${fileId}`,
+    };
+  } catch (error) {
+    console.error("Error creating file:", error);
+    return {
+      success: false,
+      fileId: "",
+      message: error instanceof Error ? error.message : "Failed to create file",
+    };
+  }
+}
+
+export async function updateFile(
+  folderPath: string,
+  fileId: string,
+  content: string
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const filePath = resolve(folderPath, fileId);
+
+    // Security check: ensure path is within folderPath
+    if (!filePath.startsWith(resolve(folderPath))) {
+      throw new Error("Path traversal attempt detected");
+    }
+
+    // Write the updated content
+    await writeFile(filePath, content, "utf-8");
+
+    // Clear cache to force refresh
+    clearCache();
+
+    return {
+      success: true,
+      message: `Updated: ${fileId}`,
+    };
+  } catch (error) {
+    console.error("Error updating file:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update file",
+    };
+  }
 }

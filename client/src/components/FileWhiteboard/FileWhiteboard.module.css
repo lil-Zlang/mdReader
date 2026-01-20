@@ -96,24 +96,25 @@
   opacity: 0.95;
 }
 
-/* Card Styling */
+/* Card Styling - Enhanced for content preview */
 .card {
   position: absolute;
-  width: 200px;
-  height: 100px;
+  width: 280px;
+  height: 160px;
   background: white;
   border: 2px solid #ddd;
   border-left: 4px solid #667eea;
-  border-radius: 8px;
-  padding: 0.75rem;
+  border-radius: 10px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   z-index: 10;
   cursor: grab;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   user-select: none;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .card::before {
@@ -130,8 +131,8 @@
 
 .card:hover {
   border-color: #667eea;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(102, 126, 234, 0.18);
+  transform: translateY(-3px);
 }
 
 .card:hover::before {
@@ -145,7 +146,7 @@
 .card.selected {
   border-color: #667eea;
   background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 28px rgba(102, 126, 234, 0.22);
   transform: translateY(-4px);
 }
 
@@ -153,6 +154,93 @@
   border-color: #764ba2;
 }
 
+/* Card Header */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #eee;
+  background: linear-gradient(to bottom, #fafbfc, #f8f9fa);
+  pointer-events: none;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.cardHeaderRight {
+  flex-shrink: 0;
+}
+
+.icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.name {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.connectionBadge {
+  background: #667eea;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  white-space: nowrap;
+}
+
+/* Content Preview */
+.cardPreview {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.previewText {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #555;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.previewPlaceholder {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #aaa;
+  font-size: 0.75rem;
+}
+
+.sizeInfo {
+  background: #f0f2f5;
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: #888;
+}
+
+/* Legacy styles for backward compatibility */
 .cardContent {
   display: flex;
   gap: 0.75rem;
@@ -164,26 +252,11 @@
   z-index: 1;
 }
 
-.icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
 .info {
   min-width: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
-}
-
-.name {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #2c3e50;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .size {
@@ -195,28 +268,11 @@
   text-overflow: ellipsis;
 }
 
-.connectionBadge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: #667eea;
-  color: white;
-  border-radius: 12px;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
-}
-
 .connectionIndicator {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 2px;
+  height: 3px;
   background: linear-gradient(90deg, #667eea, #764ba2);
   transition: width 0.3s ease;
 }
@@ -301,21 +357,34 @@
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .card {
-    width: 150px;
-    height: 80px;
-    padding: 0.5rem;
+    width: 200px;
+    height: 120px;
+  }
+
+  .cardHeader {
+    padding: 0.5rem 0.6rem;
   }
 
   .icon {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 
   .name {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 
-  .size {
+  .cardPreview {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .previewText {
     font-size: 0.7rem;
+    -webkit-line-clamp: 3;
+  }
+
+  .connectionBadge {
+    font-size: 0.6rem;
+    padding: 2px 6px;
   }
 
   .header {

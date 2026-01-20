@@ -6,6 +6,37 @@ export interface FileData {
   name: string;
   path: string;
   metadata: { size: number };
+  contentPreview?: string;
+}
+
+// Strip markdown syntax for clean preview text
+function stripMarkdown(text: string): string {
+  return text
+    // Remove headers
+    .replace(/^#{1,6}\s+/gm, "")
+    // Remove bold/italic
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    // Remove inline code
+    .replace(/`([^`]+)`/g, "$1")
+    // Remove links, keep text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    // Remove images
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "")
+    // Remove blockquotes
+    .replace(/^>\s+/gm, "")
+    // Remove horizontal rules
+    .replace(/^[-*_]{3,}\s*$/gm, "")
+    // Remove list markers
+    .replace(/^[\s]*[-*+]\s+/gm, "")
+    .replace(/^[\s]*\d+\.\s+/gm, "")
+    // Collapse multiple newlines
+    .replace(/\n{2,}/g, " ")
+    // Collapse multiple spaces
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 export interface Connection {
@@ -27,6 +58,7 @@ export interface BacklinkInfo {
 
 interface WhiteboardState {
   files: FileData[];
+  filesWithPreviews: FileData[];
   connections: Connection[];
   positions: Record<string, CardPosition>;
   selectedFile: string | null;
@@ -44,6 +76,7 @@ export function useWhiteboardState(
 ) {
   const [state, setState] = useState<WhiteboardState>({
     files,
+    filesWithPreviews: files,
     connections: [],
     positions: {},
     selectedFile: null,
@@ -146,10 +179,10 @@ export function useWhiteboardState(
 
     console.log("[FileWhiteboard] Initializing layout with dimensions:", width, height);
 
-    // Create force-directed graph
+    // Create force-directed graph with parameters tuned for larger cards
     graphRef.current = new ForceDirectedGraph(width, height, {
       linkStrength: 0.08,
-      repulsionStrength: 250,
+      repulsionStrength: 400, // Increased for larger cards (280x160px)
       centerGravity: 0.02,
       damping: 0.85,
       maxVelocity: 4,
@@ -209,6 +242,66 @@ export function useWhiteboardState(
   useEffect(() => {
     fetchBacklinks();
   }, [fetchBacklinks]);
+
+  // Fetch content previews for all files
+  const fetchContentPreviews = useCallback(async () => {
+    if (!files.length) return;
+
+    const PREVIEW_LENGTH = 120;
+    const BATCH_SIZE = 10; // Fetch in batches to avoid overwhelming the server
+
+    const previewCache = new Map<string, string>();
+
+    // Process files in batches
+    for (let i = 0; i < files.length; i += BATCH_SIZE) {
+      const batch = files.slice(i, i + BATCH_SIZE);
+
+      const previewPromises = batch.map(async (file) => {
+        // Only fetch previews for markdown files
+        if (!file.name.endsWith(".md")) {
+          return { id: file.id, preview: "" };
+        }
+
+        try {
+          const response = await fetch(`/api/files/${file.id}/content`);
+          if (response.ok) {
+            const content = await response.text();
+            // Extract first 300 chars and strip markdown
+            const cleanContent = stripMarkdown(content.slice(0, 300));
+            const preview = cleanContent.slice(0, PREVIEW_LENGTH);
+            return {
+              id: file.id,
+              preview: preview.length < cleanContent.length ? preview + "..." : preview,
+            };
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch preview for ${file.id}:`, error);
+        }
+        return { id: file.id, preview: "" };
+      });
+
+      const results = await Promise.all(previewPromises);
+      results.forEach(({ id, preview }) => {
+        previewCache.set(id, preview);
+      });
+    }
+
+    // Update files with previews
+    const updatedFiles = files.map((file) => ({
+      ...file,
+      contentPreview: previewCache.get(file.id) || "",
+    }));
+
+    setState((prev) => ({
+      ...prev,
+      filesWithPreviews: updatedFiles,
+    }));
+  }, [files]);
+
+  // Fetch content previews after initial load
+  useEffect(() => {
+    fetchContentPreviews();
+  }, [fetchContentPreviews]);
 
   // Handle container resize
   useEffect(() => {

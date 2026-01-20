@@ -21,16 +21,29 @@ export default function TableOfContents({
   const [headings, setHeadings] = useState<Heading[]>([]);
 
   useEffect(() => {
-    // Extract headings from markdown content
+    // Extract headings from markdown content, skipping code blocks
     const lines = content.split("\n");
     const extractedHeadings: Heading[] = [];
+    let headingIndex = 0;
+    let inCodeBlock = false;
 
-    lines.forEach((line, index) => {
+    lines.forEach((line) => {
+      // Track code block state (``` or ~~~)
+      if (line.trim().startsWith("```") || line.trim().startsWith("~~~")) {
+        inCodeBlock = !inCodeBlock;
+        return;
+      }
+
+      // Skip lines inside code blocks
+      if (inCodeBlock) return;
+
       const match = line.match(/^(#{1,6})\s+(.+)$/);
       if (match) {
         const level = match[1].length;
         const text = match[2].trim();
-        const id = `heading-${index}`;
+        // Use sequential index to match MarkdownViewer's data-heading-id
+        const id = `heading-${headingIndex}`;
+        headingIndex++;
 
         extractedHeadings.push({ id, text, level });
       }
