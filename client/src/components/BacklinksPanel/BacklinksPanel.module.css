@@ -1,0 +1,92 @@
+.container {
+  background: white;
+  border-left: 1px solid #eee;
+  width: 300px;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.header {
+  padding: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: white;
+}
+
+.empty {
+  padding: 1rem;
+  color: #999;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.section {
+  border-bottom: 1px solid #eee;
+}
+
+.sectionTitle {
+  padding: 0.75rem 1rem;
+  background: #f9f9f9;
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #667eea;
+  border-bottom: 1px solid #eee;
+}
+
+.linkList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.linkItem {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.linkItem:hover {
+  background: #f9f9f9;
+  border-left: 3px solid #667eea;
+  padding-left: calc(1rem - 3px);
+}
+
+.linkName {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linkContext {
+  font-size: 0.75rem;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loading,
+.error {
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #d32f2f;
+  background: #ffebee;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    display: none;
+  }
+}

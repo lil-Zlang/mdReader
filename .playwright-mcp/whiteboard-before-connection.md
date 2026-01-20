@@ -1,0 +1,67 @@
+### Page state
+- Page URL: http://localhost:5174/
+- Page Title: mdReader - Beautiful Markdown Viewer
+- Page Snapshot:
+```yaml
+- generic [ref=e27]:
+  - banner [ref=e28]:
+    - generic [ref=e29]:
+      - heading "mdReader" [level=1] [ref=e30]
+      - generic [ref=e31]:
+        - button "← Back" [disabled] [ref=e32]
+        - button "Forward →" [disabled] [ref=e33]
+        - button "Hide TOC" [ref=e34] [cursor=pointer]
+        - button "Hide Links" [ref=e35] [cursor=pointer]
+        - button "Show Empty" [ref=e36] [cursor=pointer]
+        - button "Hide Flow" [active] [ref=e57] [cursor=pointer]
+  - generic [ref=e58]:
+    - generic [ref=e59]:
+      - heading "File Whiteboard" [level=2] [ref=e60]
+      - paragraph [ref=e61]: Drag cards to move • Ctrl+Click a card then click another to connect • Click lines to delete
+    - generic [ref=e62]:
+      - img
+      - generic [ref=e63]:
+        - generic:
+          - generic: 📄
+          - generic:
+            - heading "guide.md" [level=4]
+            - paragraph: 664 B
+        - button "⊕" [ref=e64]
+      - generic [ref=e65]:
+        - generic:
+          - generic: 📄
+          - generic:
+            - heading "file3.md" [level=4]
+            - paragraph: 47 B
+        - button "⊕" [ref=e66]
+      - generic [ref=e67]:
+        - generic:
+          - generic: 📄
+          - generic:
+            - heading "file2.md" [level=4]
+            - paragraph: 104 B
+        - button "⊕" [ref=e68]
+      - generic [ref=e69]:
+        - generic:
+          - generic: 📄
+          - generic:
+            - heading "file1.md" [level=4]
+            - paragraph: 126 B
+        - button "⊕" [ref=e70]
+      - generic [ref=e71]:
+        - generic:
+          - generic: 📄
+          - generic:
+            - heading "README.md" [level=4]
+            - paragraph: 962 B
+        - button "⊕" [ref=e72]
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - text: "Files:"
+          - strong [ref=e76]: "5"
+        - generic [ref=e77]:
+          - text: "Connections:"
+          - strong [ref=e78]: "0"
+      - paragraph [ref=e79]: "💡 Tip: Hold down the ⊕ button and drag to another card to create a connection"
+```

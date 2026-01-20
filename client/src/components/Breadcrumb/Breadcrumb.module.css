@@ -1,0 +1,45 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.segment {
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.segment:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.chevron {
+  color: #999;
+  padding: 0 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .breadcrumb {
+    font-size: 0.85rem;
+  }
+
+  .segment {
+    max-width: 100px;
+  }
+}

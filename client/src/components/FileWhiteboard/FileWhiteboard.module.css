@@ -1,0 +1,342 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fafbfc;
+}
+
+.header {
+  padding: 1.5rem;
+  background: white;
+  border-bottom: 2px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.4rem;
+  color: #2c3e50;
+  font-weight: 700;
+}
+
+.instructions {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.whiteboard {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(45deg, #f9f9f9 25%, transparent 25%, transparent 75%, #f9f9f9 75%, #f9f9f9),
+              linear-gradient(45deg, #f9f9f9 25%, transparent 25%, transparent 75%, #f9f9f9 75%, #f9f9f9);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+  background-color: #fafbfc;
+  cursor: grab;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.whiteboard:active {
+  cursor: grabbing;
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  font-size: 1.1rem;
+  color: #667eea;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.connectionLine {
+  stroke: #667eea;
+  stroke-width: 2;
+  fill: none;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.connectionLine:hover {
+  stroke: #667eea;
+  stroke-width: 3;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 4px rgba(102, 126, 234, 0.5));
+}
+
+.arrowHead {
+  fill: #667eea;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.connectionLine:hover ~ .arrowHead {
+  fill: #667eea;
+  opacity: 0.95;
+}
+
+/* Card Styling */
+.card {
+  position: absolute;
+  width: 200px;
+  height: 100px;
+  background: white;
+  border: 2px solid #ddd;
+  border-left: 4px solid #667eea;
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  cursor: grab;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  user-select: none;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #667eea, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:active {
+  cursor: grabbing;
+}
+
+.card.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+  transform: translateY(-4px);
+}
+
+.card.hovered {
+  border-color: #764ba2;
+}
+
+.cardContent {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
+}
+
+.icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.size {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.75rem;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.connectionBadge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #667eea;
+  color: white;
+  border-radius: 12px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.connectionIndicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transition: width 0.3s ease;
+}
+
+.footer {
+  padding: 1rem 1.5rem;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stats {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.stats strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+/* Scrollbar styling */
+.whiteboard::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.whiteboard::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.whiteboard::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 5px;
+}
+
+.whiteboard::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.header {
+  animation: slideIn 0.4s ease-out;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .card {
+    width: 150px;
+    height: 80px;
+    padding: 0.5rem;
+  }
+
+  .icon {
+    font-size: 1.2rem;
+  }
+
+  .name {
+    font-size: 0.8rem;
+  }
+
+  .size {
+    font-size: 0.7rem;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+
+  .header h2 {
+    font-size: 1.1rem;
+  }
+
+  .instructions {
+    font-size: 0.8rem;
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+  }
+
+  .stats {
+    gap: 1rem;
+  }
+}
