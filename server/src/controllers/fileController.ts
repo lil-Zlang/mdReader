@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { scanMarkdownFiles, getFileContent, createFile, updateFile } from "../services/fileService.js";
+import { scanMarkdownFiles, getFileContent, createFile, updateFile, deleteFile } from "../services/fileService.js";
 
 let currentFolderPath: string | null = null;
 
@@ -103,5 +103,33 @@ export async function updateFileHandler(req: Request, res: Response) {
   } catch (error) {
     console.error("Error updating file:", error);
     res.status(500).json({ error: "Failed to update file" });
+  }
+}
+
+export async function deleteFileHandler(req: Request, res: Response) {
+  const { fileId } = req.params;
+
+  if (!currentFolderPath) {
+    return res.status(400).json({ error: "No folder configured" });
+  }
+
+  if (!fileId) {
+    return res.status(400).json({ error: "Missing fileId" });
+  }
+
+  try {
+    const result = await deleteFile(currentFolderPath, fileId);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    res.status(500).json({ error: "Failed to delete file" });
   }
 }

@@ -1,45 +1,70 @@
+/* Breadcrumb - Clean path navigation */
+
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0;
-  font-size: 0.9rem;
-  color: #666;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-stone);
+  margin-top: var(--space-xs);
 }
 
 .segment {
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 3px;
-  transition: all 0.2s;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 150px;
+  color: var(--color-stone);
 }
 
 .segment:hover {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
+  background: var(--color-terracotta-muted);
+  color: var(--color-terracotta);
+}
+
+.segment:last-child {
+  color: var(--color-charcoal);
+  font-weight: 500;
+  cursor: default;
+}
+
+.segment:last-child:hover {
+  background: transparent;
+  color: var(--color-charcoal);
 }
 
 .separator {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--space-xs);
 }
 
 .chevron {
-  color: #999;
-  padding: 0 0.25rem;
+  color: var(--color-sand);
+  font-size: 0.75rem;
+  padding: 0 var(--space-xs);
+  user-select: none;
+}
+
+/* File icon */
+.fileIcon {
+  color: var(--color-terracotta);
+  margin-right: var(--space-xs);
 }
 
 @media (max-width: 768px) {
   .breadcrumb {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    flex-wrap: wrap;
   }
 
   .segment {
     max-width: 100px;
+    padding: 2px var(--space-xs);
   }
 }

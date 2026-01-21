@@ -1,5 +1,5 @@
 import { glob } from "glob";
-import { readFile, stat, writeFile, mkdir } from "fs/promises";
+import { readFile, stat, writeFile, mkdir, unlink } from "fs/promises";
 import { resolve, relative, basename, dirname } from "path";
 
 export interface CachedFile {
@@ -173,6 +173,40 @@ export async function updateFile(
     return {
       success: false,
       message: error instanceof Error ? error.message : "Failed to update file",
+    };
+  }
+}
+
+export async function deleteFile(
+  folderPath: string,
+  fileId: string
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const filePath = resolve(folderPath, fileId);
+
+    // Security check: ensure path is within folderPath
+    if (!filePath.startsWith(resolve(folderPath))) {
+      throw new Error("Path traversal attempt detected");
+    }
+
+    // Check if file exists
+    await stat(filePath);
+
+    // Delete the file
+    await unlink(filePath);
+
+    // Clear cache to force refresh
+    clearCache();
+
+    return {
+      success: true,
+      message: `Deleted: ${fileId}`,
+    };
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to delete file",
     };
   }
 }

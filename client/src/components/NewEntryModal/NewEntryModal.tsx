@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, DragEvent } from "react";
 import styles from "./NewEntryModal.module.css";
 
 interface NewEntryModalProps {
@@ -8,14 +8,13 @@ interface NewEntryModalProps {
   currentFolder?: string;
 }
 
-type InputMethod = "quick" | "upload" | "blank" | "template" | "url";
+type InputMethod = "upload" | "quick" | "url";
 
-const templates = [
-  { id: "meeting", name: "Meeting Notes", content: "# Meeting Notes\n\n**Date:** \n**Attendees:** \n\n## Agenda\n- \n\n## Discussion\n\n## Action Items\n- [ ] \n" },
-  { id: "journal", name: "Daily Journal", content: `# ${new Date().toLocaleDateString()}\n\n## Morning\n\n## Afternoon\n\n## Evening\n\n## Gratitude\n- \n` },
-  { id: "project", name: "Project Plan", content: "# Project Name\n\n## Overview\n\n## Goals\n- \n\n## Tasks\n- [ ] \n\n## Resources\n\n## Timeline\n" },
-  { id: "todo", name: "TODO List", content: "# TODO\n\n## High Priority\n- [ ] \n\n## Medium Priority\n- [ ] \n\n## Low Priority\n- [ ] \n" },
-];
+interface UploadedFile {
+  name: string;
+  content: string;
+  relativePath?: string;
+}
 
 export default function NewEntryModal({
   isOpen,
@@ -23,33 +22,159 @@ export default function NewEntryModal({
   onSuccess,
   currentFolder = "",
 }: NewEntryModalProps) {
-  const [method, setMethod] = useState<InputMethod>("quick");
+  const [method, setMethod] = useState<InputMethod>("upload");
   const [fileName, setFileName] = useState("");
   const [content, setContent] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const isMarkdownFile = (fileName: string): boolean => {
+    const ext = fileName.toLowerCase();
+    return ext.endsWith('.md') || ext.endsWith('.markdown') || ext.endsWith('.txt');
+  };
+
+  const processFiles = async (files: FileList | File[]): Promise<UploadedFile[]> => {
+    const fileArray = Array.from(files);
+    const mdFiles = fileArray.filter(file => isMarkdownFile(file.name));
+
+    const processedFiles: UploadedFile[] = [];
+    for (const file of mdFiles) {
+      const content = await file.text();
+      processedFiles.push({
+        name: file.name,
+        content,
+        relativePath: (file as any).webkitRelativePath || file.name,
+      });
+    }
+    return processedFiles;
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const processed = await processFiles(e.target.files);
+      setUploadedFiles(prev => [...prev, ...processed]);
+    }
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const items = e.dataTransfer.items;
+    const allFiles: File[] = [];
+
+    // Process all items (files and folders)
+    const processEntry = async (entry: FileSystemEntry): Promise<File[]> => {
+      const files: File[] = [];
+
+      if (entry.isFile) {
+        const fileEntry = entry as FileSystemFileEntry;
+        const file = await new Promise<File>((resolve) => {
+          fileEntry.file(resolve);
+        });
+        if (isMarkdownFile(file.name)) {
+          files.push(file);
+        }
+      } else if (entry.isDirectory) {
+        const dirEntry = entry as FileSystemDirectoryEntry;
+        const reader = dirEntry.createReader();
+        const entries = await new Promise<FileSystemEntry[]>((resolve) => {
+          reader.readEntries(resolve);
+        });
+        for (const subEntry of entries) {
+          const subFiles = await processEntry(subEntry);
+          files.push(...subFiles);
+        }
+      }
+      return files;
+    };
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const entry = item.webkitGetAsEntry();
+      if (entry) {
+        const files = await processEntry(entry);
+        allFiles.push(...files);
+      }
+    }
+
+    if (allFiles.length > 0) {
+      const processed = await processFiles(allFiles);
+      setUploadedFiles(prev => [...prev, ...processed]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAllFiles = () => {
+    setUploadedFiles([]);
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      // Handle upload method with multiple files
+      if (method === "upload" && uploadedFiles.length > 0) {
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const file of uploadedFiles) {
+          try {
+            const response = await fetch("/api/files", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fileName: file.name,
+                content: file.content,
+                folder: currentFolder,
+              }),
+            });
+
+            if (response.ok) {
+              successCount++;
+            } else {
+              failCount++;
+            }
+          } catch {
+            failCount++;
+          }
+        }
+
+        if (successCount > 0) {
+          onSuccess(`Created ${successCount} file${successCount > 1 ? 's' : ''}${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+        } else {
+          throw new Error("Failed to create files");
+        }
+        handleClose();
+        return;
+      }
+
+      // Handle other methods (single file)
       let finalFileName = fileName.trim();
       let finalContent = content;
 
-      // Handle different input methods
-      if (method === "upload" && uploadFile) {
-        finalFileName = uploadFile.name;
-        finalContent = await uploadFile.text();
-      } else if (method === "template" && selectedTemplate) {
-        const template = templates.find(t => t.id === selectedTemplate);
-        if (template) {
-          finalContent = template.content;
-        }
-      } else if (method === "url" && url.trim()) {
-        // Fetch content from URL
+      if (method === "url" && url.trim()) {
         const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(url)}`);
         if (response.ok) {
           finalContent = await response.text();
@@ -58,19 +183,16 @@ export default function NewEntryModal({
         }
       }
 
-      // Validate filename after processing upload/template
       if (!finalFileName) {
         alert("Please enter a file name");
         setLoading(false);
         return;
       }
 
-      // Add .md extension if not present
       if (!finalFileName.endsWith(".md")) {
         finalFileName += ".md";
       }
 
-      // Create the file
       const response = await fetch("/api/files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -98,22 +220,18 @@ export default function NewEntryModal({
   const handleClose = () => {
     setFileName("");
     setContent("");
-    setSelectedTemplate("");
-    setUploadFile(null);
+    setUploadedFiles([]);
     setUrl("");
-    setMethod("quick");
+    setMethod("upload");
     onClose();
   };
 
-  const handleTemplateChange = (templateId: string) => {
-    setSelectedTemplate(templateId);
-    const template = templates.find(t => t.id === templateId);
-    if (template) {
-      setContent(template.content);
-      if (!fileName) {
-        setFileName(template.name.toLowerCase().replace(/\s+/g, "-"));
-      }
-    }
+  const canSubmit = () => {
+    if (loading) return false;
+    if (method === "upload") return uploadedFiles.length > 0;
+    if (method === "quick") return !!fileName.trim();
+    if (method === "url") return !!url.trim() && !!fileName.trim();
+    return false;
   };
 
   return (
@@ -121,46 +239,161 @@ export default function NewEntryModal({
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2>Add New Entry</h2>
-          <button className={styles.closeButton} onClick={handleClose}>
-            ✕
+          <button className={styles.closeButton} onClick={handleClose} aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M1 1l12 12M13 1L1 13" />
+            </svg>
           </button>
         </div>
 
         {/* Method Selection Tabs */}
         <div className={styles.tabs}>
           <button
-            className={`${styles.tab} ${method === "quick" ? styles.active : ""}`}
-            onClick={() => setMethod("quick")}
-          >
-            📝 Quick Note
-          </button>
-          <button
             className={`${styles.tab} ${method === "upload" ? styles.active : ""}`}
             onClick={() => setMethod("upload")}
           >
-            📤 Upload File
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Upload
           </button>
           <button
-            className={`${styles.tab} ${method === "blank" ? styles.active : ""}`}
-            onClick={() => setMethod("blank")}
+            className={`${styles.tab} ${method === "quick" ? styles.active : ""}`}
+            onClick={() => setMethod("quick")}
           >
-            📄 Blank File
-          </button>
-          <button
-            className={`${styles.tab} ${method === "template" ? styles.active : ""}`}
-            onClick={() => setMethod("template")}
-          >
-            📋 Template
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 19l7-7 3 3-7 7-3-3z" />
+              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+              <path d="M2 2l7.586 7.586" />
+              <circle cx="11" cy="11" r="2" />
+            </svg>
+            Quick Note
           </button>
           <button
             className={`${styles.tab} ${method === "url" ? styles.active : ""}`}
             onClick={() => setMethod("url")}
           >
-            🌐 From URL
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+            </svg>
+            URL
           </button>
         </div>
 
         <div className={styles.content}>
+          {/* Upload Files or Folder */}
+          {method === "upload" && (
+            <div className={styles.section}>
+              <div
+                className={`${styles.uploadArea} ${isDragging ? styles.dragging : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".md,.markdown,.txt"
+                  multiple
+                  onChange={handleFileSelect}
+                  className={styles.fileInput}
+                  id="file-upload"
+                />
+                <input
+                  ref={folderInputRef}
+                  type="file"
+                  // @ts-expect-error - webkitdirectory is not in types
+                  webkitdirectory=""
+                  multiple
+                  onChange={handleFileSelect}
+                  className={styles.fileInput}
+                  id="folder-upload"
+                />
+
+                <div className={styles.uploadContent}>
+                  <div className={styles.uploadIcon}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  </div>
+                  <p className={styles.uploadTitle}>
+                    {isDragging ? "Drop files here" : "Drag & drop files or folders"}
+                  </p>
+                  <p className={styles.uploadHint}>Only .md, .markdown, and .txt files will be imported</p>
+
+                  <div className={styles.uploadButtons}>
+                    <button
+                      type="button"
+                      className={styles.uploadButton}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                      Select Files
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.uploadButton}
+                      onClick={() => folderInputRef.current?.click()}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                      </svg>
+                      Select Folder
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* File List */}
+              {uploadedFiles.length > 0 && (
+                <div className={styles.fileList}>
+                  <div className={styles.fileListHeader}>
+                    <span className={styles.fileCount}>
+                      {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} selected
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.clearButton}
+                      onClick={clearAllFiles}
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  <ul className={styles.fileItems}>
+                    {uploadedFiles.map((file, index) => (
+                      <li key={index} className={styles.fileItem}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <span className={styles.fileName}>{file.name}</span>
+                        <button
+                          type="button"
+                          className={styles.removeButton}
+                          onClick={() => removeFile(index)}
+                          aria-label="Remove file"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                            <path d="M1 1l12 12M13 1L1 13" />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Quick Note */}
           {method === "quick" && (
             <div className={styles.section}>
@@ -185,97 +418,6 @@ export default function NewEntryModal({
                   rows={12}
                 />
               </label>
-            </div>
-          )}
-
-          {/* Upload File */}
-          {method === "upload" && (
-            <div className={styles.section}>
-              <div className={styles.uploadArea}>
-                <input
-                  type="file"
-                  accept=".md,.markdown,.txt"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                  className={styles.fileInput}
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload" className={styles.uploadLabel}>
-                  {uploadFile ? (
-                    <div>
-                      <p>✓ Selected: {uploadFile.name}</p>
-                      <p className={styles.uploadHint}>Click to change file</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p>📁 Click to select .md file</p>
-                      <p className={styles.uploadHint}>or drag and drop</p>
-                    </div>
-                  )}
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* Blank File */}
-          {method === "blank" && (
-            <div className={styles.section}>
-              <label className={styles.label}>
-                File Name
-                <input
-                  type="text"
-                  className={styles.input}
-                  placeholder="untitled.md"
-                  value={fileName}
-                  onChange={(e) => setFileName(e.target.value)}
-                  autoFocus
-                />
-              </label>
-              <p className={styles.hint}>Creates an empty markdown file ready for editing</p>
-            </div>
-          )}
-
-          {/* Template */}
-          {method === "template" && (
-            <div className={styles.section}>
-              <label className={styles.label}>
-                Choose Template
-                <select
-                  className={styles.select}
-                  value={selectedTemplate}
-                  onChange={(e) => handleTemplateChange(e.target.value)}
-                  autoFocus
-                >
-                  <option value="">Select a template...</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {selectedTemplate && (
-                <>
-                  <label className={styles.label}>
-                    File Name
-                    <input
-                      type="text"
-                      className={styles.input}
-                      placeholder="filename.md"
-                      value={fileName}
-                      onChange={(e) => setFileName(e.target.value)}
-                    />
-                  </label>
-                  <label className={styles.label}>
-                    Preview
-                    <textarea
-                      className={styles.textarea}
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      rows={8}
-                    />
-                  </label>
-                </>
-              )}
             </div>
           )}
 
@@ -315,9 +457,9 @@ export default function NewEntryModal({
           <button
             className={styles.submitButton}
             onClick={handleSubmit}
-            disabled={loading || (method === "upload" && !uploadFile) || (method === "template" && !selectedTemplate)}
+            disabled={!canSubmit()}
           >
-            {loading ? "Creating..." : "Create"}
+            {loading ? "Creating..." : method === "upload" && uploadedFiles.length > 1 ? `Create ${uploadedFiles.length} Files` : "Create"}
           </button>
         </div>
       </div>

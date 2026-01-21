@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { slugify, createUniqueSlug } from "../../utils/slugify";
 import styles from "./TableOfContents.module.css";
 
 interface Heading {
@@ -13,6 +14,20 @@ interface TableOfContentsProps {
   onScroll?: (headingId: string) => void;
 }
 
+// Strip markdown formatting from text to get plain text
+const stripMarkdown = (text: string): string => {
+  return text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // [link](url) -> link
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1') // ![alt](url) -> alt
+    .replace(/`([^`]+)`/g, '$1')              // `code` -> code
+    .replace(/\*\*([^*]+)\*\*/g, '$1')        // **bold** -> bold
+    .replace(/\*([^*]+)\*/g, '$1')            // *italic* -> italic
+    .replace(/__([^_]+)__/g, '$1')            // __bold__ -> bold
+    .replace(/_([^_]+)_/g, '$1')              // _italic_ -> italic
+    .replace(/~~([^~]+)~~/g, '$1')            // ~~strike~~ -> strike
+    .trim();
+};
+
 export default function TableOfContents({
   content,
   onHeadingClick,
@@ -24,7 +39,7 @@ export default function TableOfContents({
     // Extract headings from markdown content, skipping code blocks
     const lines = content.split("\n");
     const extractedHeadings: Heading[] = [];
-    let headingIndex = 0;
+    const usedSlugs = new Set<string>();
     let inCodeBlock = false;
 
     lines.forEach((line) => {
@@ -40,12 +55,14 @@ export default function TableOfContents({
       const match = line.match(/^(#{1,6})\s+(.+)$/);
       if (match) {
         const level = match[1].length;
-        const text = match[2].trim();
-        // Use sequential index to match MarkdownViewer's data-heading-id
-        const id = `heading-${headingIndex}`;
-        headingIndex++;
+        const rawText = match[2].trim();
+        // Strip markdown formatting for slug generation (to match MarkdownViewer)
+        const plainText = stripMarkdown(rawText);
+        const id = createUniqueSlug(plainText, usedSlugs);
+        usedSlugs.add(id);
 
-        extractedHeadings.push({ id, text, level });
+        // Use plain text for cleaner display
+        extractedHeadings.push({ id, text: plainText, level });
       }
     });
 

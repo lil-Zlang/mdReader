@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MarkdownViewer from "../MarkdownViewer/MarkdownViewer";
 import Breadcrumb from "../Breadcrumb/Breadcrumb";
 import TableOfContents from "../TableOfContents/TableOfContents";
@@ -7,6 +7,7 @@ import Toast from "../Toast/Toast";
 import EmptyFilesManager from "../EmptyFilesManager/EmptyFilesManager";
 import FileWhiteboard from "../FileWhiteboard/FileWhiteboard";
 import NewEntryModal from "../NewEntryModal/NewEntryModal";
+import ConfirmationModal from "../ConfirmationModal/ConfirmationModal";
 import { useNavigationHistory } from "../../hooks/useNavigationHistory";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import styles from "./Layout.module.css";
@@ -42,6 +43,11 @@ export default function Layout({ folderPath }: LayoutProps) {
   const [toasts, setToasts] = useState<
     Array<{ id: string; message: string; type: "info" | "success" | "warning" | "error" }>
   >([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const lastSelectedIndexRef = useRef<number | null>(null);
   const navigation = useNavigationHistory();
 
   // WebSocket connection for real-time file updates
@@ -152,82 +158,229 @@ export default function Layout({ folderPath }: LayoutProps) {
     navigation.push(fileId);
   };
 
-  // Fetch file content for TOC
+  // Clear file content when no file is selected
   useEffect(() => {
-    if (!selectedFileId) return;
-
-    const fetchContent = async () => {
-      try {
-        const response = await fetch(`/api/files/${selectedFileId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setFileContent(data.content || "");
-        }
-      } catch (err) {
-        console.error("Error fetching file content for TOC:", err);
-      }
-    };
-
-    fetchContent();
+    if (!selectedFileId) {
+      setFileContent("");
+    }
   }, [selectedFileId]);
 
   const selectedFile = files.find((f) => f.id === selectedFileId);
+
+  // Get display name from file path
+  const getDisplayName = (relativePath: string) => {
+    const parts = relativePath.split('/');
+    const fileName = parts[parts.length - 1];
+    return fileName.replace(/\.md$/, '');
+  };
+
+  // Selection mode handlers
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    if (isSelectionMode) {
+      setSelectedFiles(new Set());
+      lastSelectedIndexRef.current = null;
+    }
+  };
+
+  const handleFileCheckboxChange = (fileId: string, index: number, shiftKey: boolean) => {
+    setSelectedFiles((prev) => {
+      const newSet = new Set(prev);
+
+      // Shift+click for range selection
+      if (shiftKey && lastSelectedIndexRef.current !== null) {
+        const start = Math.min(lastSelectedIndexRef.current, index);
+        const end = Math.max(lastSelectedIndexRef.current, index);
+        for (let i = start; i <= end; i++) {
+          newSet.add(files[i].id);
+        }
+      } else {
+        if (newSet.has(fileId)) {
+          newSet.delete(fileId);
+        } else {
+          newSet.add(fileId);
+        }
+        lastSelectedIndexRef.current = index;
+      }
+
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedFiles.size === files.length) {
+      setSelectedFiles(new Set());
+    } else {
+      setSelectedFiles(new Set(files.map(f => f.id)));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedFiles.size === 0) return;
+
+    setDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+    const deletedIds: string[] = [];
+
+    for (const fileId of selectedFiles) {
+      try {
+        const response = await fetch(`/api/files/${encodeURIComponent(fileId)}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          successCount++;
+          deletedIds.push(fileId);
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+    }
+
+    // Clear selection and refresh files
+    setSelectedFiles(new Set());
+    setShowDeleteConfirm(false);
+    setDeleting(false);
+    setIsSelectionMode(false);
+
+    // If currently viewed file was deleted, clear selection
+    if (selectedFileId && deletedIds.includes(selectedFileId)) {
+      setSelectedFileId(null);
+      setFileContent("");
+    }
+
+    // Refresh file list
+    try {
+      const response = await fetch("/api/files");
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data);
+      }
+    } catch (err) {
+      console.error("Error refreshing files:", err);
+    }
+
+    // Show toast
+    const message = successCount > 0
+      ? `Deleted ${successCount} file${successCount > 1 ? "s" : ""}${failCount > 0 ? ` (${failCount} failed)` : ""}`
+      : "Failed to delete files";
+
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        message,
+        type: successCount > 0 ? "success" : "error",
+      },
+    ]);
+  };
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerTop}>
-          <h1>mdReader</h1>
+          <div className={styles.brand}>
+            <div className={styles.brandIcon}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+            </div>
+            <h1>mdReader</h1>
+          </div>
+
           <div className={styles.headerControls}>
+            {/* Navigation group */}
+            <div className={styles.navGroup}>
+              <button
+                className={styles.navButton}
+                disabled={!navigation.canGoBack}
+                onClick={() => {
+                  const prevFile = navigation.goBack();
+                  if (prevFile) setSelectedFileId(prevFile);
+                }}
+                title="Back (Alt+Left)"
+              >
+                <span className={styles.navIcon}>←</span>
+              </button>
+              <button
+                className={styles.navButton}
+                disabled={!navigation.canGoForward}
+                onClick={() => {
+                  const nextFile = navigation.goForward();
+                  if (nextFile) setSelectedFileId(nextFile);
+                }}
+                title="Forward (Alt+Right)"
+              >
+                <span className={styles.navIcon}>→</span>
+              </button>
+            </div>
+
+            <div className={styles.headerDivider} />
+
+            {/* View toggles */}
+            <div className={styles.viewToggle}>
+              <button
+                className={`${styles.actionButton} ${!showFlowChart ? styles.active : ''}`}
+                onClick={() => setShowFlowChart(false)}
+                title="List view"
+              >
+                List
+              </button>
+              <button
+                className={`${styles.actionButton} ${showFlowChart ? styles.active : ''}`}
+                onClick={() => setShowFlowChart(true)}
+                title="Graph view"
+              >
+                Graph
+              </button>
+            </div>
+
+            <button
+              className={`${styles.actionButton} ${showTOC ? styles.active : ''}`}
+              onClick={() => setShowTOC(!showTOC)}
+              title="Toggle Table of Contents (Ctrl+T)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+              <span className={styles.buttonLabel}>Outline</span>
+            </button>
+
+            <button
+              className={`${styles.actionButton} ${showEmptyFiles ? styles.active : ''}`}
+              onClick={() => setShowEmptyFiles(!showEmptyFiles)}
+              title="View empty files"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span className={styles.buttonLabel}>Empty</span>
+            </button>
+
+            <div className={styles.headerDivider} />
+
+            {/* Primary action */}
             <button
               className={styles.newButton}
               onClick={() => setShowNewEntry(true)}
               title="New Entry (Cmd+N)"
             >
-              + New
-            </button>
-            <button
-              className={styles.navButton}
-              disabled={!navigation.canGoBack}
-              onClick={() => {
-                const prevFile = navigation.goBack();
-                if (prevFile) setSelectedFileId(prevFile);
-              }}
-              title="Back (Alt+←)"
-            >
-              ← Back
-            </button>
-            <button
-              className={styles.navButton}
-              disabled={!navigation.canGoForward}
-              onClick={() => {
-                const nextFile = navigation.goForward();
-                if (nextFile) setSelectedFileId(nextFile);
-              }}
-              title="Forward (Alt+→)"
-            >
-              Forward →
-            </button>
-            <button
-              className={styles.tocToggle}
-              onClick={() => setShowTOC(!showTOC)}
-              title="Toggle TOC (Ctrl+T)"
-            >
-              {showTOC ? "Hide TOC" : "Show TOC"}
-            </button>
-            <button
-              className={styles.tocToggle}
-              onClick={() => setShowEmptyFiles(!showEmptyFiles)}
-              title="View empty files"
-            >
-              {showEmptyFiles ? "Hide Empty" : "Show Empty"}
-            </button>
-            <button
-              className={styles.tocToggle}
-              onClick={() => setShowFlowChart(!showFlowChart)}
-              title="View flow chart"
-            >
-              {showFlowChart ? "Hide Flow" : "Show Flow"}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              New
+              <span className={styles.shortcut}>⌘N</span>
             </button>
           </div>
         </div>
@@ -250,55 +403,197 @@ export default function Layout({ folderPath }: LayoutProps) {
       {!showFlowChart && (
         <div className={styles.main}>
           <aside className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>
-            <h2>Files</h2>
-          </div>
-          {loading && <p className={styles.message}>Loading files...</p>}
-          {error && <p className={styles.error}>{error}</p>}
-          {!loading && files.length === 0 && (
-            <p className={styles.message}>No markdown files found</p>
-          )}
-          {!loading && files.length > 0 && (
-            <ul className={styles.fileList}>
-              {files.map((file) => (
-                <li
-                  key={file.id}
-                  className={`${styles.fileItem} ${
-                    selectedFileId === file.id ? styles.active : ""
-                  }`}
-                  onClick={() => handleFileSelect(file.id)}
-                  title={file.relativePath}
-                >
-                  <span className={styles.fileName}>{file.relativePath}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </aside>
-
-        <div className={styles.viewerContainer}>
-          <main className={styles.viewer}>
-            {!selectedFile ? (
-              <div className={styles.emptyState}>
-                <p>📖 Select a file to view</p>
+            <div className={styles.sidebarHeader}>
+              {isSelectionMode ? (
+                <>
+                  <div className={styles.selectionInfo}>
+                    <button
+                      className={styles.selectAllButton}
+                      onClick={handleSelectAll}
+                      title={selectedFiles.size === files.length ? "Deselect all" : "Select all"}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        {selectedFiles.size === files.length ? (
+                          <>
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                          </>
+                        ) : (
+                          <>
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <polyline points="9 11 12 14 22 4" />
+                          </>
+                        )}
+                      </svg>
+                    </button>
+                    <span className={styles.selectedCount}>
+                      {selectedFiles.size} selected
+                    </span>
+                  </div>
+                  <div className={styles.selectionActions}>
+                    {selectedFiles.size > 0 && (
+                      <button
+                        className={styles.deleteButton}
+                        onClick={() => setShowDeleteConfirm(true)}
+                        title="Delete selected files"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                    )}
+                    <button
+                      className={styles.cancelSelectButton}
+                      onClick={toggleSelectionMode}
+                      title="Cancel selection"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M1 1l12 12M13 1L1 13" />
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2>Documents</h2>
+                  <div className={styles.sidebarActions}>
+                    <span className={styles.fileCount}>{files.length}</span>
+                    {files.length > 0 && (
+                      <button
+                        className={styles.selectAllOutsideButton}
+                        onClick={() => {
+                          if (!isSelectionMode) {
+                            setIsSelectionMode(true);
+                          }
+                          setSelectedFiles(new Set(files.map(f => f.id)));
+                        }}
+                        title="Select all files"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                          <polyline points="9 11 12 14 22 4" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            {loading && (
+              <div className={styles.fileList}>
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className={`${styles.skeleton} ${styles.skeletonItem}`} />
+                ))}
               </div>
-            ) : (
-              <MarkdownViewer
-                fileId={selectedFile.id}
-                fileName={selectedFile.name}
-                scrollToHeading={scrollToHeading?.id}
-                scrollKey={scrollToHeading?.timestamp}
+            )}
+            {error && <p className={styles.error}>{error}</p>}
+            {!loading && files.length === 0 && (
+              <div className={styles.noFilesState}>
+                <div className={styles.noFilesIcon}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="18" x2="12" y2="12" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                  </svg>
+                </div>
+                <h3>No documents yet</h3>
+                <p>Get started by creating or uploading a markdown file</p>
+                <button
+                  className={styles.addFirstFileButton}
+                  onClick={() => setShowNewEntry(true)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add New Entry
+                </button>
+                <span className={styles.noFilesHint}>or drag and drop files here</span>
+              </div>
+            )}
+            {!loading && files.length > 0 && (
+              <ul className={styles.fileList}>
+                {files.map((file, index) => (
+                  <li
+                    key={file.id}
+                    className={`${styles.fileItem} ${
+                      selectedFileId === file.id ? styles.active : ""
+                    } ${isSelectionMode && selectedFiles.has(file.id) ? styles.selected : ""}`}
+                    onClick={(e) => {
+                      if (isSelectionMode) {
+                        handleFileCheckboxChange(file.id, index, e.shiftKey);
+                      } else {
+                        handleFileSelect(file.id);
+                      }
+                    }}
+                    title={file.relativePath}
+                  >
+                    {isSelectionMode && (
+                      <span
+                        className={`${styles.checkbox} ${selectedFiles.has(file.id) ? styles.checked : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleFileCheckboxChange(file.id, index, e.shiftKey);
+                        }}
+                      >
+                        {selectedFiles.has(file.id) && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </span>
+                    )}
+                    <span className={styles.fileName}>{getDisplayName(file.relativePath)}</span>
+                    {file.relativePath.includes('/') && (
+                      <span className={styles.filePath}>
+                        {file.relativePath.split('/').slice(0, -1).join('/')}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </aside>
+
+          <div className={styles.viewerContainer}>
+            <main className={styles.viewer}>
+              {!selectedFile ? (
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyIcon}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                  </div>
+                  <h3>Select a document</h3>
+                  <p>Choose a markdown file from the sidebar to start reading</p>
+                  <div className={styles.emptyHint}>
+                    Press <kbd>⌘</kbd> + <kbd>F</kbd> to search
+                  </div>
+                </div>
+              ) : (
+                <MarkdownViewer
+                  fileId={selectedFile.id}
+                  fileName={selectedFile.name}
+                  scrollToHeading={scrollToHeading?.id}
+                  scrollKey={scrollToHeading?.timestamp}
+                  showTOC={showTOC}
+                  onToggleTOC={() => setShowTOC(!showTOC)}
+                  onContentChange={setFileContent}
+                />
+              )}
+            </main>
+            {showTOC && selectedFile && (
+              <TableOfContents
+                content={fileContent}
+                onScroll={(headingId) => setScrollToHeading({ id: headingId, timestamp: Date.now() })}
               />
             )}
-          </main>
-          {showTOC && selectedFile && (
-            <TableOfContents
-              content={fileContent}
-              onScroll={(headingId) => setScrollToHeading({ id: headingId, timestamp: Date.now() })}
-            />
-          )}
+          </div>
         </div>
-      </div>
       )}
 
       <SearchBar
@@ -372,6 +667,19 @@ export default function Layout({ folderPath }: LayoutProps) {
           fetchFiles();
         }}
         currentFolder={folderPath}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteSelected}
+        title="Delete Files"
+        message={`Are you sure you want to delete ${selectedFiles.size} file${selectedFiles.size > 1 ? "s" : ""}? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleting}
       />
     </div>
   );
