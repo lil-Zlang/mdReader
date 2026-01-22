@@ -159,17 +159,64 @@ Enter fullscreen mode for distraction-free writing. Press \`Esc\` to exit.
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === 'GET') {
-    return res.json(demoFiles);
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
-  if (req.method === 'POST') {
-    // In demo mode, pretend to create the file
-    const { fileName } = req.body;
-    return res.status(201).json({
+  // Get the path segments
+  const { path } = req.query;
+  const pathSegments = Array.isArray(path) ? path : (path ? [path] : []);
+
+  // If no path segments, list all files
+  if (pathSegments.length === 0) {
+    if (req.method === 'GET') {
+      return res.json(demoFiles);
+    }
+    if (req.method === 'POST') {
+      const { fileName } = req.body;
+      return res.status(201).json({
+        success: true,
+        fileId: fileName || 'new-file.md',
+        message: 'Demo mode: File creation simulated',
+      });
+    }
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Get file by ID (join path segments for nested paths)
+  const fileId = pathSegments.join('/');
+
+  if (req.method === 'GET') {
+    const content = demoContent[fileId];
+    if (!content) {
+      return res.status(404).json({ error: `File not found: ${fileId}` });
+    }
+    return res.json({
+      content,
+      metadata: {
+        size: content.length,
+        modifiedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  if (req.method === 'PUT') {
+    return res.json({
       success: true,
-      fileId: fileName || 'new-file.md',
-      message: 'Demo mode: File creation simulated',
+      message: 'Demo mode: File update simulated (changes not persisted)',
+    });
+  }
+
+  if (req.method === 'DELETE') {
+    return res.json({
+      success: true,
+      message: 'Demo mode: File deletion simulated',
     });
   }
 

@@ -7,15 +7,28 @@ interface FileChangeEvent {
   path: string;
 }
 
+// Check if we're running on Vercel (production) where WebSocket isn't available
+const isVercelProduction = typeof window !== 'undefined' &&
+  (window.location.hostname.includes('vercel.app') ||
+   window.location.hostname.includes('vercel.com'));
+
 export function useWebSocket(onFileChange?: (event: FileChangeEvent) => void) {
   const [connected, setConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    // Skip WebSocket connection on Vercel production
+    if (isVercelProduction) {
+      console.log("WebSocket disabled in production mode");
+      return;
+    }
+
     // Connect to WebSocket server
     const socket = io(window.location.origin, {
       path: "/socket.io",
       transports: ["websocket", "polling"],
+      reconnectionAttempts: 3, // Limit reconnection attempts
+      timeout: 5000,
     });
 
     socketRef.current = socket;
@@ -49,6 +62,11 @@ export function useWebSocket(onFileChange?: (event: FileChangeEvent) => void) {
 
     socket.on("error", (error) => {
       console.error("WebSocket error:", error);
+    });
+
+    socket.on("connect_error", () => {
+      // Silently handle connection errors in production
+      socket.disconnect();
     });
 
     return () => {
