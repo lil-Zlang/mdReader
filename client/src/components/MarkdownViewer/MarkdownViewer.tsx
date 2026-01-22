@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { RichTextEditor } from "../RichTextEditor";
 import { htmlToMarkdown } from "../../utils/markdownConverter";
 import { slugify, createUniqueSlug } from "../../utils/slugify";
+import { isVercelProduction, getDemoFileContent } from "../../data/demoData";
 import styles from "./MarkdownViewer.module.css";
 
 interface MarkdownViewerProps {
@@ -45,6 +46,23 @@ export default function MarkdownViewer({
     const fetchFile = async () => {
       try {
         setLoading(true);
+
+        // Use demo data on Vercel production
+        if (isVercelProduction) {
+          const demoData = getDemoFileContent(fileId);
+          if (demoData) {
+            setContent(demoData.content);
+            setEditContent(demoData.content);
+            setError(null);
+            onContentChange?.(demoData.content);
+          } else {
+            setError("File not found");
+            setContent("");
+          }
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch(`/api/files/${fileId}`);
         if (!response.ok) {
           throw new Error("Failed to load file");
@@ -56,8 +74,17 @@ export default function MarkdownViewer({
         // Notify parent of content for TOC synchronization
         onContentChange?.(data.content);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-        setContent("");
+        // Fallback to demo data if API fails
+        const demoData = getDemoFileContent(fileId);
+        if (demoData) {
+          setContent(demoData.content);
+          setEditContent(demoData.content);
+          setError(null);
+          onContentChange?.(demoData.content);
+        } else {
+          setError(err instanceof Error ? err.message : "Unknown error");
+          setContent("");
+        }
       } finally {
         setLoading(false);
       }

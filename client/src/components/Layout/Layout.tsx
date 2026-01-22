@@ -10,6 +10,7 @@ import NewEntryModal from "../NewEntryModal/NewEntryModal";
 import ConfirmationModal from "../ConfirmationModal/ConfirmationModal";
 import { useNavigationHistory } from "../../hooks/useNavigationHistory";
 import { useWebSocket } from "../../hooks/useWebSocket";
+import { isVercelProduction, demoFiles } from "../../data/demoData";
 import styles from "./Layout.module.css";
 
 interface LayoutProps {
@@ -94,6 +95,13 @@ export default function Layout({ folderPath }: LayoutProps) {
 
   useEffect(() => {
     const fetchFiles = async () => {
+      // Use demo data on Vercel production
+      if (isVercelProduction) {
+        setFiles(demoFiles as MarkdownFile[]);
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch("/api/files");
         if (!response.ok) {
@@ -103,8 +111,10 @@ export default function Layout({ folderPath }: LayoutProps) {
         setFiles(data);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-        console.error("Error loading files:", err);
+        // Fallback to demo data if API fails
+        console.warn("API failed, using demo data:", err);
+        setFiles(demoFiles as MarkdownFile[]);
+        setError(null);
       } finally {
         setLoading(false);
       }
