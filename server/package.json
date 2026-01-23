@@ -1,12 +1,19 @@
 {
-  "name": "@mdreader/server",
-  "version": "0.1.0",
+  "name": "@mdr/server",
+  "version": "1.0.0",
   "private": true,
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "node ../node_modules/typescript/bin/tsc",
     "start": "node dist/index.js"
   },
   "dependencies": {

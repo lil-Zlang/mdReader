@@ -1,6 +1,10 @@
-# mdReader - Beautiful Markdown Viewer
+# mdr - Beautiful Markdown Reader
 
 The fastest, most beautiful way to read and navigate markdown documentation locally.
+
+```bash
+mdr ./docs
+```
 
 ## Features
 
@@ -11,42 +15,81 @@ The fastest, most beautiful way to read and navigate markdown documentation loca
 ⚡ **Real-Time Sync** - Automatically detects and updates when files change
 📱 **Responsive Design** - Works great on desktop and tablet
 
+## Quick Start
+
+### Install from source
+
+```bash
+git clone https://github.com/yourusername/mdreader.git
+cd mdreader
+npm install
+npm run build
+npm link -w cli
+```
+
+### Usage
+
+```bash
+# Open current directory
+mdr
+
+# Open a specific folder
+mdr ./my-docs
+
+# Open a specific file (opens the containing folder)
+mdr ./README.md
+
+# Specify a port
+mdr ./docs --port 8080
+
+# Don't auto-open browser
+mdr ./docs --no-open
+```
+
+The browser opens automatically and you can view your markdown files with beautiful rendering.
+
+## CLI Options
+
+```
+Usage: mdr [options] [path]
+
+Beautiful markdown reader in your browser
+
+Arguments:
+  path                 Path to markdown file or folder (default: ".")
+
+Options:
+  -V, --version        output the version number
+  -p, --port <number>  Port to run on (default: auto-detect)
+  --no-open            Don't open browser automatically
+  -h, --help           display help for command
+```
+
 ## Project Structure
 
 ```
 mdReader/
+├── cli/                 # CLI entry point
 ├── client/              # React frontend (Vite + TypeScript)
 ├── server/              # Node.js/Express backend
 ├── shared/              # Shared TypeScript types
 └── package.json         # Root monorepo configuration
 ```
 
-## Installation
+## Development
 
 ### Prerequisites
 
-- Node.js 16+ and npm 8+
+- Node.js 18+ and npm 8+
 
 ### Setup
 
-1. Install dependencies:
-
 ```bash
-npm install --legacy-peer-deps
+npm install
+npm run build
 ```
 
-2. Create a test markdown folder (optional):
-
-```bash
-mkdir -p /tmp/mdreader_test
-# Add some .md files to this folder
-```
-
-## Development
-
-### Start Development Server
-
-Run both frontend and backend in development mode:
+### Development Mode
 
 ```bash
 # Terminal 1: Start backend
@@ -59,20 +102,7 @@ npm run client
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3001
 
-### Build for Production
-
-```bash
-npm run build
-```
-
-## Usage
-
-### First Launch
-
-1. Open the application in your browser (http://localhost:5173)
-2. You'll see the welcome screen
-3. Click "Select Folder" or enter the path to your markdown folder
-4. Your files will load and display in the sidebar
+## Using the UI
 
 ### Navigation
 

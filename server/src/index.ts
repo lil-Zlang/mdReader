@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
-import { createServer } from "http";
+import { createServer as createHttpServer } from "http";
 import { Server } from "socket.io";
 import routes from "./routes/index.js";
 import { watchFiles } from "./utils/fileWatcher.js";
@@ -11,57 +11,91 @@ import { setCurrentFolderForBacklinks } from "./controllers/backlinkController.j
 import { setCurrentFolderForSearch } from "./controllers/searchController.js";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177", "http://localhost:5178"],
-    methods: ["GET", "POST"],
-  },
-});
+export interface ServerOptions {
+  port: number;
+  folderPath: string;
+  clientPath?: string;
+}
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+export interface ServerInstance {
+  close: (callback?: () => void) => void;
+  port: number;
+}
 
-// Store config
-let markdownFolderPath: string | null = null;
+export async function createServer(options: ServerOptions): Promise<ServerInstance> {
+  const { port, folderPath, clientPath } = options;
 
-// Routes
-app.use("/api", routes);
+  const app = express();
+  const httpServer = createHttpServer(app);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+    },
+  });
 
-// Config endpoint
-app.post("/api/config", (req, res) => {
-  const { markdownFolderPath: path } = req.body;
-  if (!path) {
-    return res.status(400).json({ error: "Missing markdownFolderPath" });
-  }
-  markdownFolderPath = path;
-  setCurrentFolder(path);
-  setCurrentFolderForBacklinks(path);
-  setCurrentFolderForSearch(path);
+  // Middleware
+  app.use(cors());
+  app.use(express.json());
+
+  // Set folder path for all controllers
+  setCurrentFolder(folderPath);
+  setCurrentFolderForBacklinks(folderPath);
+  setCurrentFolderForSearch(folderPath);
 
   // Start file watcher
-  watchFiles(path, io);
+  watchFiles(folderPath, io);
 
-  res.json({ success: true, path });
-});
+  // API routes
+  app.use("/api", routes);
 
-app.get("/api/config", (req, res) => {
-  res.json({ markdownFolderPath });
-});
-
-// WebSocket connection
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
+  // Config endpoint (for compatibility)
+  app.get("/api/config", (_req, res) => {
+    res.json({ markdownFolderPath: folderPath });
   });
-});
 
-const PORT = process.env.PORT || 3001;
-httpServer.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+  // Serve static client files if clientPath provided
+  if (clientPath) {
+    app.use(express.static(clientPath));
+
+    // SPA fallback - serve index.html for all non-API routes
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(clientPath, "index.html"));
+    });
+  }
+
+  // WebSocket connection
+  io.on("connection", (socket) => {
+    console.log("Client connected:", socket.id);
+    socket.on("disconnect", () => {
+      console.log("Client disconnected:", socket.id);
+    });
+  });
+
+  // Start server
+  return new Promise((resolve) => {
+    httpServer.listen(port, () => {
+      resolve({
+        close: (callback?: () => void) => {
+          io.close();
+          httpServer.close(callback);
+        },
+        port,
+      });
+    });
+  });
+}
+
+// Run directly if this is the main module
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
+  const PORT = parseInt(process.env.PORT || "3001", 10);
+  const FOLDER = process.env.MARKDOWN_FOLDER || process.cwd();
+
+  createServer({ port: PORT, folderPath: FOLDER }).then((server) => {
+    console.log(`Server running on http://localhost:${server.port}`);
+    console.log(`Serving markdown files from: ${FOLDER}`);
+  });
+}
