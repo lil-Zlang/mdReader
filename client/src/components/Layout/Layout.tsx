@@ -14,6 +14,7 @@ import styles from "./Layout.module.css";
 
 interface LayoutProps {
   folderPath: string;
+  initialFile?: string | null;
 }
 
 interface MarkdownFile {
@@ -28,7 +29,7 @@ interface MarkdownFile {
   };
 }
 
-export default function Layout({ folderPath }: LayoutProps) {
+export default function Layout({ folderPath, initialFile }: LayoutProps) {
   const [files, setFiles] = useState<MarkdownFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +103,26 @@ export default function Layout({ folderPath }: LayoutProps) {
         const data = await response.json();
         setFiles(data);
         setError(null);
+
+        // Auto-select initial file if provided
+        if (initialFile && data.length > 0) {
+          // Find the file by name or path
+          const matchingFile = data.find(
+            (f: MarkdownFile) =>
+              f.name === initialFile ||
+              f.id === initialFile ||
+              f.path.endsWith(initialFile) ||
+              f.relativePath === initialFile
+          );
+          if (matchingFile) {
+            setSelectedFileId(matchingFile.id);
+            navigation.push(matchingFile.id);
+          } else if (data.length === 1) {
+            // If only one file, select it
+            setSelectedFileId(data[0].id);
+            navigation.push(data[0].id);
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load files");
       } finally {
@@ -110,7 +131,7 @@ export default function Layout({ folderPath }: LayoutProps) {
     };
 
     fetchFiles();
-  }, [folderPath]);
+  }, [folderPath, initialFile]);
 
   // Keyboard shortcuts
   useEffect(() => {
