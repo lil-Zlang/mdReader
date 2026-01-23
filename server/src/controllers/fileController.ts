@@ -2,9 +2,14 @@ import { Request, Response } from "express";
 import { scanMarkdownFiles, getFileContent, createFile, updateFile, deleteFile } from "../services/fileService.js";
 
 let currentFolderPath: string | null = null;
+let singleFileFilter: string | null = null;
 
 export function setCurrentFolder(path: string) {
   currentFolderPath = path;
+}
+
+export function setSingleFileFilter(fileName: string | null) {
+  singleFileFilter = fileName;
 }
 
 export async function listFiles(req: Request, res: Response) {
@@ -13,7 +18,18 @@ export async function listFiles(req: Request, res: Response) {
   }
 
   try {
-    const files = await scanMarkdownFiles(currentFolderPath);
+    let files = await scanMarkdownFiles(currentFolderPath);
+
+    // Filter to single file if specified
+    if (singleFileFilter) {
+      const filterName = singleFileFilter;
+      files = files.filter(f =>
+        f.name === filterName ||
+        f.id === filterName ||
+        f.path.endsWith(filterName)
+      );
+    }
+
     res.json(files);
   } catch (error) {
     console.error("Error listing files:", error);

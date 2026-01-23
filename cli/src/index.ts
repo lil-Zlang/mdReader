@@ -37,6 +37,7 @@ program
       // Determine folder path
       let folderPath: string;
       let initialFile: string | undefined;
+      let singleFile: string | undefined;
 
       const stat = fs.statSync(resolvedPath);
       if (stat.isDirectory()) {
@@ -45,6 +46,7 @@ program
         // If it's a file, use the parent directory as folder
         folderPath = path.dirname(resolvedPath);
         initialFile = path.basename(resolvedPath);
+        singleFile = path.basename(resolvedPath); // Only show this file
       } else {
         console.error(chalk.red(`Error: Invalid path: ${resolvedPath}`));
         process.exit(1);
@@ -72,6 +74,7 @@ program
         port,
         folderPath,
         clientPath,
+        singleFile,
       });
 
       // Build URL

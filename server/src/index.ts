@@ -6,7 +6,7 @@ import { createServer as createHttpServer } from "http";
 import { Server } from "socket.io";
 import routes from "./routes/index.js";
 import { watchFiles } from "./utils/fileWatcher.js";
-import { setCurrentFolder } from "./controllers/fileController.js";
+import { setCurrentFolder, setSingleFileFilter } from "./controllers/fileController.js";
 import { setCurrentFolderForBacklinks } from "./controllers/backlinkController.js";
 import { setCurrentFolderForSearch } from "./controllers/searchController.js";
 
@@ -17,6 +17,7 @@ export interface ServerOptions {
   port: number;
   folderPath: string;
   clientPath?: string;
+  singleFile?: string; // When set, only serve this specific file
 }
 
 export interface ServerInstance {
@@ -25,7 +26,7 @@ export interface ServerInstance {
 }
 
 export async function createServer(options: ServerOptions): Promise<ServerInstance> {
-  const { port, folderPath, clientPath } = options;
+  const { port, folderPath, clientPath, singleFile } = options;
 
   const app = express();
   const httpServer = createHttpServer(app);
@@ -44,6 +45,11 @@ export async function createServer(options: ServerOptions): Promise<ServerInstan
   setCurrentFolder(folderPath);
   setCurrentFolderForBacklinks(folderPath);
   setCurrentFolderForSearch(folderPath);
+
+  // Set single file filter if specified
+  if (singleFile) {
+    setSingleFileFilter(singleFile);
+  }
 
   // Start file watcher
   watchFiles(folderPath, io);
@@ -66,12 +72,9 @@ export async function createServer(options: ServerOptions): Promise<ServerInstan
     });
   }
 
-  // WebSocket connection
-  io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
-    socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
-    });
+  // WebSocket connection (silent - no logging)
+  io.on("connection", () => {
+    // Connection established
   });
 
   // Start server
