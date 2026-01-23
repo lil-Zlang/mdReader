@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mdr</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;600&family=JetBrains+Mono:wght@400;600&display=swap");
+
+      :root {
+        color-scheme: light;
+        --bg: #f7f6f3;
+        --bg-strong: #f1f1ee;
+        --panel: #ffffff;
+        --panel-strong: #ffffff;
+        --ink: #2f3437;
+        --muted: #787774;
+        --accent: #2f6fed;
+        --accent-strong: #1d4ed8;
+        --accent-soft: #e9f0ff;
+        --border: #e3e3e0;
+        --border-strong: #d7d7d2;
+        --code-bg: #f7f6f3;
+        --code-ink: #2f3437;
+        --shadow: 0 10px 24px rgba(15, 15, 14, 0.08);
+        --shadow-soft: 0 6px 14px rgba(15, 15, 14, 0.06);
+        --radius: 12px;
+        --radius-sm: 8px;
+        --font-ui: "Source Sans 3", "Trebuchet MS", sans-serif;
+        --font-body: "Source Sans 3", "Trebuchet MS", sans-serif;
+        --font-mono: "JetBrains Mono", "SFMono-Regular", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--font-ui);
+        background: var(--bg);
+        color: var(--ink);
+        min-height: 100vh;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: minmax(240px, 320px) 1fr;
+        min-height: 100vh;
+        gap: 16px;
+        padding: 20px;
+      }
+
+      .sidebar {
+        background: var(--bg);
+        border-radius: var(--radius);
+        padding: 18px 16px 14px;
+        box-shadow: var(--shadow-soft);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-height: 0;
+        border: 1px solid var(--border);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .logo {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .pill {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #ededeb;
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+
+      .folder {
+        font-size: 12px;
+        color: var(--muted);
+        background: #fbfbfa;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        word-break: break-all;
+      }
+
+      .search {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .filter {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+        background: var(--panel-strong);
+        font-family: var(--font-ui);
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .filter:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(47, 111, 237, 0.15);
+      }
+
+      .search-hint {
+        font-size: 11px;
+        color: var(--muted);
+        background: #ededeb;
+        border-radius: 8px;
+        padding: 4px 6px;
+      }
+
+      .file-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        overflow-y: auto;
+        flex: 1;
+        display: grid;
+        gap: 6px;
+        min-height: 0;
+      }
+
+      .file-item {
+        padding: 8px 10px 8px 24px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+        background: transparent;
+        position: relative;
+      }
+
+      .file-item::before {
+        content: "";
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        width: 6px;
+        height: 6px;
+        border-radius: 2px;
+        background: #d1d1cb;
+        transform: translateY(-50%);
+      }
+
+      .file-item:hover {
+        background: #efefec;
+      }
+
+      .file-item.active {
+        border-color: var(--border-strong);
+        background: #e8e7e4;
+      }
+
+      .file-item.active::before {
+        background: var(--accent);
+      }
+
+      .file-name {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .file-path {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .sidebar-footer {
+        font-size: 11px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+      }
+
+      .viewer {
+        background: var(--panel);
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 16px;
+        min-height: 0;
+        border: 1px solid var(--border);
+      }
+
+      .viewer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .meta-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .meta-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .meta {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .button {
+        border: 1px solid var(--border);
+        background: #fff;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        font-family: var(--font-ui);
+      }
+
+      .button:hover {
+        border-color: var(--border-strong);
+        background: #f3f3f1;
+        color: var(--ink);
+      }
+
+      .button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .button.primary:hover {
+        color: #fff;
+        background: var(--accent-strong);
+        border-color: var(--accent-strong);
+      }
+
+      .button.secondary {
+        background: #f2f2f0;
+      }
+
+      .button[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+
+      .viewer-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .document {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .doc-header {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .doc-title {
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .doc-path {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .content {
+        flex: 1;
+        background: var(--panel-strong);
+        border-radius: var(--radius-sm);
+        padding: 20px 22px 28px;
+        border: 1px solid var(--border);
+        overflow: auto;
+        font-family: var(--font-body);
+        font-size: 16px;
+        line-height: 1.7;
+      }
+
+      .content.editing {
+        border: 1px solid var(--accent);
+        box-shadow: inset 0 0 0 1px rgba(47, 111, 237, 0.2);
+        background: #fbfbfa;
+      }
+
+      .content.editing:focus {
+        outline: none;
+        box-shadow: inset 0 0 0 2px rgba(47, 111, 237, 0.25);
+      }
+
+      .content h1,
+      .content h2,
+      .content h3 {
+        font-family: var(--font-ui);
+        margin-top: 1.8em;
+      }
+
+      .content h1 {
+        font-size: 28px;
+      }
+
+      .content h2 {
+        font-size: 22px;
+      }
+
+      .content h3 {
+        font-size: 18px;
+      }
+
+      .content a {
+        color: var(--accent);
+      }
+
+      .content pre {
+        background: var(--code-bg);
+        color: var(--code-ink);
+        padding: 14px 16px;
+        border-radius: 10px;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        box-shadow: none;
+      }
+
+      .content code {
+        font-family: var(--font-mono);
+        font-size: 0.95em;
+      }
+
+      .content :not(pre) > code {
+        background: #f1f1ef;
+        color: #2f3437;
+        border-radius: 6px;
+        padding: 2px 6px;
+        border: 1px solid var(--border);
+      }
+
+      .content blockquote {
+        margin: 1.5em 0;
+        padding: 10px 16px;
+        border-left: 3px solid var(--border-strong);
+        background: #fbfbfa;
+        border-radius: 8px;
+      }
+
+      .content table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1.5em 0;
+        font-size: 15px;
+      }
+
+      .content th,
+      .content td {
+        border: 1px solid var(--border);
+        padding: 8px 10px;
+        text-align: left;
+      }
+
+      .content img {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: none;
+      }
+
+      .empty {
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      .side-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .toc,
+      .inspector {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: #fbfbfa;
+      }
+
+      .toc-title,
+      .inspector-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+
+      .toc-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        overflow-y: auto;
+        display: grid;
+        gap: 6px;
+        max-height: 300px;
+      }
+
+      .toc-item {
+        font-size: 13px;
+        cursor: pointer;
+        color: var(--ink);
+        padding: 6px 8px;
+        border-radius: 8px;
+        transition: background 0.2s ease;
+      }
+
+      .toc-item:hover {
+        background: #efefec;
+      }
+
+      .toc-item.active {
+        background: #e8e7e4;
+        color: var(--ink);
+      }
+
+      .toc-item.level-2 {
+        padding-left: 18px;
+        color: var(--muted);
+      }
+
+      .toc-item.level-3 {
+        padding-left: 28px;
+        color: var(--muted);
+      }
+
+      .inspector-text {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .badge {
+        align-self: flex-start;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #ededeb;
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+
+      body.editing .badge {
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        border-color: var(--accent-soft);
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      @media (max-width: 1100px) {
+        .viewer-body {
+          grid-template-columns: 1fr;
+        }
+
+        .side-panel {
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+
+        .toc,
+        .inspector {
+          flex: 1 1 260px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: 1fr;
+          padding: 20px;
+        }
+
+        .viewer {
+          padding: 20px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .content {
+          padding: 18px;
+        }
+
+        .viewer-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="logo">mdr</div>
+          <div class="pill" id="file-count">0 files</div>
+        </div>
+        <div class="folder" id="folder"></div>
+        <div class="search">
+          <input class="filter" id="filter" placeholder="Filter files..." />
+          <div class="search-hint">Cmd+K</div>
+        </div>
+        <ul class="file-list" id="file-list"></ul>
+        <div class="sidebar-footer">
+          <div>Tip: Ctrl+S saves edits.</div>
+          <div>Markdown</div>
+        </div>
+      </aside>
+      <main class="viewer">
+        <div class="viewer-header">
+          <div class="meta-wrap">
+            <div class="meta-label">Current file</div>
+            <div class="meta" id="meta">Select a file to start.</div>
+          </div>
+          <div class="toolbar">
+            <button class="button" id="edit-toggle" disabled>Edit</button>
+            <button class="button primary hidden" id="save">Save</button>
+            <button class="button secondary hidden" id="cancel">Cancel</button>
+          </div>
+        </div>
+        <div class="viewer-body">
+          <section class="document">
+            <div class="doc-header">
+              <div class="doc-title" id="doc-title">No file selected</div>
+              <div class="doc-path" id="doc-path"></div>
+            </div>
+            <div id="content" class="content empty">Select a file to preview.</div>
+          </section>
+          <aside class="side-panel">
+            <section class="toc">
+              <div class="toc-title">Contents</div>
+              <ul class="toc-list" id="toc-list"></ul>
+            </section>
+            <section class="inspector">
+              <div class="inspector-title">Editing</div>
+              <div class="inspector-text">
+                Edit directly in the reader. The table of contents updates as you type.
+              </div>
+              <div class="badge" id="edit-badge">Read only</div>
+            </section>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const state = {
+        files: [],
+        selectedId: null,
+        filter: "",
+        isEditing: false,
+        currentContent: "",
+        currentHtml: "",
+        tocHeadings: [],
+      };
+
+      const fileListEl = document.getElementById("file-list");
+      const contentEl = document.getElementById("content");
+      const folderEl = document.getElementById("folder");
+      const metaEl = document.getElementById("meta");
+      const filterEl = document.getElementById("filter");
+      const editToggleEl = document.getElementById("edit-toggle");
+      const saveEl = document.getElementById("save");
+      const cancelEl = document.getElementById("cancel");
+      const tocListEl = document.getElementById("toc-list");
+      const fileCountEl = document.getElementById("file-count");
+      const docTitleEl = document.getElementById("doc-title");
+      const docPathEl = document.getElementById("doc-path");
+      const editBadgeEl = document.getElementById("edit-badge");
+
+      let tocTimer = null;
+      let scrollRaf = null;
+      let activeTocId = null;
+
+      async function fetchConfig() {
+        try {
+          const res = await fetch("/api/config");
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.folderPath) {
+            folderEl.textContent = data.folderPath;
+          }
+        } catch (err) {
+          console.error("Failed to load config", err);
+        }
+      }
+
+      async function fetchFiles() {
+        const res = await fetch("/api/files");
+        if (!res.ok) {
+          contentEl.textContent = "Failed to load files.";
+          return;
+        }
+        state.files = await res.json();
+        renderList();
+        selectInitialFile();
+      }
+
+      function updateFileCount(filteredCount) {
+        const total = state.files.length;
+        const label = filteredCount === total ? `${total}` : `${filteredCount} of ${total}`;
+        const suffix = total === 1 ? "file" : "files";
+        fileCountEl.textContent = `${label} ${suffix}`;
+      }
+
+      function renderList() {
+        fileListEl.innerHTML = "";
+        const filter = state.filter.trim().toLowerCase();
+        const filtered = state.files.filter((file) => {
+          if (!filter) return true;
+          return (
+            file.name.toLowerCase().includes(filter) ||
+            file.relativePath.toLowerCase().includes(filter)
+          );
+        });
+
+        updateFileCount(filtered.length);
+
+        if (filtered.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "file-item";
+          empty.textContent = "No matching files";
+          fileListEl.appendChild(empty);
+          return;
+        }
+
+        filtered.forEach((file) => {
+          const item = document.createElement("li");
+          item.className = "file-item" + (file.id === state.selectedId ? " active" : "");
+          item.dataset.fileId = file.id;
+
+          const name = document.createElement("div");
+          name.className = "file-name";
+          name.textContent = file.name.replace(/\.md$/i, "");
+
+          const pathEl = document.createElement("div");
+          pathEl.className = "file-path";
+          pathEl.textContent = file.relativePath;
+
+          item.appendChild(name);
+          item.appendChild(pathEl);
+
+          item.addEventListener("click", () => {
+            openFile(file.id);
+          });
+
+          fileListEl.appendChild(item);
+        });
+      }
+
+      function updateDocHeader(file) {
+        if (!file) {
+          docTitleEl.textContent = "No file selected";
+          docPathEl.textContent = "";
+          document.title = "mdr";
+          return;
+        }
+        const displayName = file.name.replace(/\.md$/i, "");
+        docTitleEl.textContent = displayName || "Untitled";
+        docPathEl.textContent = file.relativePath || "";
+        document.title = displayName ? `${displayName} - mdr` : "mdr";
+      }
+
+      async function openFile(fileId) {
+        state.selectedId = fileId;
+        renderList();
+        setEditMode(false);
+        metaEl.textContent = "";
+        contentEl.textContent = "Loading...";
+        activeTocId = null;
+
+        const file = state.files.find((item) => item.id === fileId);
+        updateDocHeader(file);
+
+        const res = await fetch(`/api/file?path=${encodeURIComponent(fileId)}`);
+        if (!res.ok) {
+          contentEl.textContent = "Failed to load file.";
+          editToggleEl.disabled = true;
+          return;
+        }
+        const data = await res.json();
+        state.currentContent = data.content || "";
+        state.currentHtml = data.html || "";
+        contentEl.classList.remove("empty");
+        contentEl.innerHTML = state.currentHtml;
+        editToggleEl.disabled = false;
+        if (data.metadata) {
+          const updated = new Date(data.metadata.modifiedAt).toLocaleString();
+          metaEl.textContent = `Last updated ${updated}`;
+        }
+        buildToc(contentEl);
+      }
+
+      function selectInitialFile() {
+        if (state.selectedId || state.files.length === 0) return;
+        const params = new URLSearchParams(window.location.search);
+        const target = params.get("file");
+        if (target) {
+          const match = state.files.find((file) => {
+            return (
+              file.id === target ||
+              file.relativePath === target ||
+              file.name === target ||
+              file.relativePath.endsWith("/" + target)
+            );
+          });
+          if (match) {
+            openFile(match.id);
+            return;
+          }
+        }
+        openFile(state.files[0].id);
+      }
+
+      function setEditMode(enabled) {
+        state.isEditing = enabled;
+        document.body.classList.toggle("editing", enabled);
+        editBadgeEl.textContent = enabled ? "Editing" : "Read only";
+        if (enabled) {
+          contentEl.contentEditable = "true";
+          contentEl.classList.add("editing");
+          editToggleEl.classList.add("hidden");
+          saveEl.classList.remove("hidden");
+          cancelEl.classList.remove("hidden");
+        } else {
+          contentEl.contentEditable = "false";
+          contentEl.classList.remove("editing");
+          editToggleEl.classList.remove("hidden");
+          saveEl.classList.add("hidden");
+          cancelEl.classList.add("hidden");
+        }
+      }
+
+      async function saveFile() {
+        if (!state.selectedId) return;
+        const html = contentEl.innerHTML;
+        saveEl.disabled = true;
+        try {
+          const res = await fetch(`/api/file?path=${encodeURIComponent(state.selectedId)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ html }),
+          });
+          if (!res.ok) {
+            alert("Failed to save file");
+            return;
+          }
+          const data = await res.json();
+          state.currentContent = data.content || "";
+          state.currentHtml = data.html || html;
+          contentEl.innerHTML = state.currentHtml;
+          if (data.metadata) {
+            const updated = new Date(data.metadata.modifiedAt).toLocaleString();
+            metaEl.textContent = `Last updated ${updated}`;
+          }
+          buildToc(contentEl);
+          setEditMode(false);
+        } finally {
+          saveEl.disabled = false;
+        }
+      }
+
+      function scheduleTocRefresh() {
+        clearTimeout(tocTimer);
+        tocTimer = setTimeout(() => buildToc(contentEl), 250);
+      }
+
+      function slugify(text) {
+        const base = text
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        return base || "section";
+      }
+
+      function setActiveToc(id) {
+        if (!id || id === activeTocId) return;
+        const prev = activeTocId
+          ? tocListEl.querySelector(`[data-toc-id="${CSS.escape(activeTocId)}"]`)
+          : null;
+        if (prev) {
+          prev.classList.remove("active");
+        }
+        const next = tocListEl.querySelector(`[data-toc-id="${CSS.escape(id)}"]`);
+        if (next) {
+          next.classList.add("active");
+          const listRect = tocListEl.getBoundingClientRect();
+          const itemRect = next.getBoundingClientRect();
+          if (itemRect.top < listRect.top || itemRect.bottom > listRect.bottom) {
+            next.scrollIntoView({ block: "nearest" });
+          }
+        }
+        activeTocId = id;
+      }
+
+      function updateActiveFromScroll() {
+        if (!state.tocHeadings || state.tocHeadings.length === 0) return;
+        const scrollTop = contentEl.scrollTop;
+        let current = state.tocHeadings[0];
+        for (const heading of state.tocHeadings) {
+          if (heading.offsetTop - 24 <= scrollTop) {
+            current = heading;
+          } else {
+            break;
+          }
+        }
+        if (current && current.id) {
+          setActiveToc(current.id);
+        }
+      }
+
+      function handleContentScroll() {
+        if (scrollRaf) return;
+        scrollRaf = requestAnimationFrame(() => {
+          scrollRaf = null;
+          updateActiveFromScroll();
+        });
+      }
+
+      function buildToc(container) {
+        tocListEl.innerHTML = "";
+        if (!container) return;
+        const headings = Array.from(container.querySelectorAll("h1, h2, h3"));
+        state.tocHeadings = headings;
+        if (headings.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "toc-item";
+          empty.textContent = "No headings";
+          tocListEl.appendChild(empty);
+          return;
+        }
+
+        const used = new Map();
+        headings.forEach((heading) => {
+          const level = Number(heading.tagName.replace("H", ""));
+          let base = heading.id || slugify(heading.textContent || "section");
+          const count = used.get(base) || 0;
+          used.set(base, count + 1);
+          if (count > 0) {
+            base = `${base}-${count}`;
+          }
+          heading.id = base;
+
+          const item = document.createElement("li");
+          item.className = `toc-item level-${level}`;
+          item.dataset.tocId = base;
+          item.textContent = heading.textContent || "Untitled";
+          item.addEventListener("click", () => {
+            const target = container.querySelector(`#${CSS.escape(base)}`);
+            if (target) {
+              target.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          });
+          tocListEl.appendChild(item);
+        });
+        updateActiveFromScroll();
+      }
+
+      filterEl.addEventListener("input", (event) => {
+        state.filter = event.target.value || "";
+        renderList();
+      });
+
+      editToggleEl.addEventListener("click", () => {
+        if (!state.selectedId) return;
+        setEditMode(true);
+      });
+
+      cancelEl.addEventListener("click", () => {
+        setEditMode(false);
+        contentEl.innerHTML = state.currentHtml;
+        buildToc(contentEl);
+      });
+
+      saveEl.addEventListener("click", () => {
+        saveFile();
+      });
+
+      contentEl.addEventListener("input", () => {
+        if (state.isEditing) {
+          scheduleTocRefresh();
+        }
+      });
+
+      contentEl.addEventListener("scroll", handleContentScroll);
+
+      window.addEventListener("resize", () => {
+        updateActiveFromScroll();
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+          if (state.isEditing) {
+            event.preventDefault();
+            saveFile();
+          }
+        }
+      });
+
+      fetchConfig();
+      fetchFiles();
+    </script>
+  </body>
+</html>
