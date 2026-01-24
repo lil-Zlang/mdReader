@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mdr</title>
+    <title>skimmd</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;600&family=JetBrains+Mono:wght@400;600&display=swap");
 
@@ -29,6 +29,70 @@
         --font-ui: "Source Sans 3", "Trebuchet MS", sans-serif;
         --font-body: "Source Sans 3", "Trebuchet MS", sans-serif;
         --font-mono: "JetBrains Mono", "SFMono-Regular", monospace;
+        --hover-bg: #efefec;
+        --toc-active: #e8e7e4;
+        --folder-bg: #fbfbfa;
+        --pill-bg: #ededeb;
+        --inline-code-bg: #f1f1ef;
+        --inline-code-ink: #2f3437;
+        --blockquote-bg: #fbfbfa;
+        --editing-bg: #fbfbfa;
+      }
+
+      [data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --bg-strong: #222222;
+        --panel: #252525;
+        --panel-strong: #2a2a2a;
+        --ink: #e4e4e4;
+        --muted: #888888;
+        --accent: #5b9aff;
+        --accent-strong: #7db0ff;
+        --accent-soft: #1e3a5f;
+        --border: #3a3a3a;
+        --border-strong: #4a4a4a;
+        --code-bg: #2a2a2a;
+        --code-ink: #e4e4e4;
+        --shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+        --shadow-soft: 0 6px 14px rgba(0, 0, 0, 0.2);
+        --hover-bg: #333333;
+        --toc-active: #3a3a3a;
+        --folder-bg: #2a2a2a;
+        --pill-bg: #333333;
+        --inline-code-bg: #333333;
+        --inline-code-ink: #e4e4e4;
+        --blockquote-bg: #2a2a2a;
+        --editing-bg: #2a2a2a;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        [data-theme="system"] {
+          color-scheme: dark;
+          --bg: #1a1a1a;
+          --bg-strong: #222222;
+          --panel: #252525;
+          --panel-strong: #2a2a2a;
+          --ink: #e4e4e4;
+          --muted: #888888;
+          --accent: #5b9aff;
+          --accent-strong: #7db0ff;
+          --accent-soft: #1e3a5f;
+          --border: #3a3a3a;
+          --border-strong: #4a4a4a;
+          --code-bg: #2a2a2a;
+          --code-ink: #e4e4e4;
+          --shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+          --shadow-soft: 0 6px 14px rgba(0, 0, 0, 0.2);
+          --hover-bg: #333333;
+          --toc-active: #3a3a3a;
+          --folder-bg: #2a2a2a;
+          --pill-bg: #333333;
+          --inline-code-bg: #333333;
+          --inline-code-ink: #e4e4e4;
+          --blockquote-bg: #2a2a2a;
+          --editing-bg: #2a2a2a;
+        }
       }
 
       * {
@@ -82,7 +146,7 @@
         letter-spacing: 0.08em;
         padding: 5px 9px;
         border-radius: 999px;
-        background: #ededeb;
+        background: var(--pill-bg);
         color: var(--muted);
         border: 1px solid var(--border);
       }
@@ -90,7 +154,7 @@
       .folder {
         font-size: 12px;
         color: var(--muted);
-        background: #fbfbfa;
+        background: var(--folder-bg);
         padding: 8px 10px;
         border-radius: 8px;
         border: 1px solid var(--border);
@@ -111,9 +175,14 @@
         padding: 8px 10px;
         font-size: 14px;
         background: var(--panel-strong);
+        color: var(--ink);
         font-family: var(--font-ui);
         outline: none;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .filter::placeholder {
+        color: var(--muted);
       }
 
       .filter:focus {
@@ -124,7 +193,7 @@
       .search-hint {
         font-size: 11px;
         color: var(--muted);
-        background: #ededeb;
+        background: var(--pill-bg);
         border-radius: 8px;
         padding: 4px 6px;
       }
@@ -135,55 +204,32 @@
         margin: 0;
         overflow-y: auto;
         flex: 1;
-        display: grid;
-        gap: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
         min-height: 0;
       }
 
       .file-item {
-        padding: 8px 10px 8px 24px;
-        border-radius: 8px;
-        border: 1px solid transparent;
+        padding: 6px 10px;
+        border-radius: 6px;
         cursor: pointer;
-        transition: background 0.2s ease, border-color 0.2s ease;
+        transition: background 0.15s ease;
         background: transparent;
-        position: relative;
-      }
-
-      .file-item::before {
-        content: "";
-        position: absolute;
-        left: 10px;
-        top: 50%;
-        width: 6px;
-        height: 6px;
-        border-radius: 2px;
-        background: #d1d1cb;
-        transform: translateY(-50%);
+        font-size: 13px;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .file-item:hover {
-        background: #efefec;
+        background: var(--hover-bg);
       }
 
       .file-item.active {
-        border-color: var(--border-strong);
-        background: #e8e7e4;
-      }
-
-      .file-item.active::before {
         background: var(--accent);
-      }
-
-      .file-name {
-        font-size: 14px;
-        font-weight: 600;
-      }
-
-      .file-path {
-        font-size: 12px;
-        color: var(--muted);
-        margin-top: 2px;
+        color: #fff;
       }
 
       .sidebar-footer {
@@ -205,6 +251,7 @@
         grid-template-rows: auto 1fr;
         gap: 16px;
         min-height: 0;
+        max-height: 100vh;
         border: 1px solid var(--border);
       }
 
@@ -242,18 +289,19 @@
 
       .button {
         border: 1px solid var(--border);
-        background: #fff;
+        background: var(--panel);
         padding: 7px 14px;
         border-radius: 8px;
         font-size: 13px;
         cursor: pointer;
         transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         font-family: var(--font-ui);
+        color: var(--ink);
       }
 
       .button:hover {
         border-color: var(--border-strong);
-        background: #f3f3f1;
+        background: var(--hover-bg);
         color: var(--ink);
       }
 
@@ -270,7 +318,7 @@
       }
 
       .button.secondary {
-        background: #f2f2f0;
+        background: var(--bg-strong);
       }
 
       .button[disabled] {
@@ -285,6 +333,7 @@
         grid-template-columns: minmax(0, 1fr) 260px;
         gap: 16px;
         min-height: 0;
+        overflow-y: auto;
       }
 
       .document {
@@ -316,7 +365,6 @@
         border-radius: var(--radius-sm);
         padding: 20px 22px 28px;
         border: 1px solid var(--border);
-        overflow: auto;
         font-family: var(--font-body);
         font-size: 16px;
         line-height: 1.7;
@@ -325,7 +373,7 @@
       .content.editing {
         border: 1px solid var(--accent);
         box-shadow: inset 0 0 0 1px rgba(47, 111, 237, 0.2);
-        background: #fbfbfa;
+        background: var(--editing-bg);
       }
 
       .content.editing:focus {
@@ -372,8 +420,8 @@
       }
 
       .content :not(pre) > code {
-        background: #f1f1ef;
-        color: #2f3437;
+        background: var(--inline-code-bg);
+        color: var(--inline-code-ink);
         border-radius: 6px;
         padding: 2px 6px;
         border: 1px solid var(--border);
@@ -383,7 +431,7 @@
         margin: 1.5em 0;
         padding: 10px 16px;
         border-left: 3px solid var(--border-strong);
-        background: #fbfbfa;
+        background: var(--blockquote-bg);
         border-radius: 8px;
       }
 
@@ -420,6 +468,9 @@
         flex-direction: column;
         gap: 16px;
         min-height: 0;
+        position: sticky;
+        top: 20px;
+        align-self: start;
       }
 
       .toc,
@@ -430,7 +481,7 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
-        background: #fbfbfa;
+        background: var(--folder-bg);
       }
 
       .toc-title,
@@ -462,11 +513,11 @@
       }
 
       .toc-item:hover {
-        background: #efefec;
+        background: var(--hover-bg);
       }
 
       .toc-item.active {
-        background: #e8e7e4;
+        background: var(--toc-active);
         color: var(--ink);
       }
 
@@ -492,7 +543,7 @@
         font-weight: 600;
         padding: 5px 9px;
         border-radius: 999px;
-        background: #ededeb;
+        background: var(--pill-bg);
         color: var(--muted);
         border: 1px solid var(--border);
       }
@@ -505,6 +556,37 @@
 
       .hidden {
         display: none;
+      }
+
+      .theme-toggle {
+        display: flex;
+        gap: 4px;
+        padding: 3px;
+        background: var(--pill-bg);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+
+      .theme-btn {
+        padding: 4px 8px;
+        border: none;
+        background: transparent;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--muted);
+        transition: background 0.15s ease, color 0.15s ease;
+        font-family: var(--font-ui);
+      }
+
+      .theme-btn:hover {
+        color: var(--ink);
+      }
+
+      .theme-btn.active {
+        background: var(--panel);
+        color: var(--ink);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       }
 
       @media (max-width: 1100px) {
@@ -550,7 +632,7 @@
     <div class="app">
       <aside class="sidebar">
         <div class="brand">
-          <div class="logo">mdr</div>
+          <div class="logo">skimmd</div>
           <div class="pill" id="file-count">0 files</div>
         </div>
         <div class="folder" id="folder"></div>
@@ -560,8 +642,11 @@
         </div>
         <ul class="file-list" id="file-list"></ul>
         <div class="sidebar-footer">
-          <div>Tip: Ctrl+S saves edits.</div>
-          <div>Markdown</div>
+          <div class="theme-toggle">
+            <button class="theme-btn" data-theme="light">Light</button>
+            <button class="theme-btn" data-theme="dark">Dark</button>
+            <button class="theme-btn" data-theme="system">Auto</button>
+          </div>
         </div>
       </aside>
       <main class="viewer">
@@ -602,6 +687,26 @@
     </div>
 
     <script>
+      // Theme handling
+      function getStoredTheme() {
+        return localStorage.getItem('skimmd-theme') || 'system';
+      }
+
+      function setTheme(theme) {
+        localStorage.setItem('skimmd-theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+        updateThemeButtons(theme);
+      }
+
+      function updateThemeButtons(theme) {
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.theme === theme);
+        });
+      }
+
+      // Apply theme immediately to prevent flash
+      document.documentElement.setAttribute('data-theme', getStoredTheme());
+
       const state = {
         files: [],
         selectedId: null,
@@ -686,17 +791,8 @@
           const item = document.createElement("li");
           item.className = "file-item" + (file.id === state.selectedId ? " active" : "");
           item.dataset.fileId = file.id;
-
-          const name = document.createElement("div");
-          name.className = "file-name";
-          name.textContent = file.name.replace(/\.md$/i, "");
-
-          const pathEl = document.createElement("div");
-          pathEl.className = "file-path";
-          pathEl.textContent = file.relativePath;
-
-          item.appendChild(name);
-          item.appendChild(pathEl);
+          item.textContent = file.name;
+          item.title = file.relativePath;
 
           item.addEventListener("click", () => {
             openFile(file.id);
@@ -710,13 +806,13 @@
         if (!file) {
           docTitleEl.textContent = "No file selected";
           docPathEl.textContent = "";
-          document.title = "mdr";
+          document.title = "skimmd";
           return;
         }
         const displayName = file.name.replace(/\.md$/i, "");
         docTitleEl.textContent = displayName || "Untitled";
         docPathEl.textContent = file.relativePath || "";
-        document.title = displayName ? `${displayName} - mdr` : "mdr";
+        document.title = displayName ? `${displayName} - skimmd` : "mdr";
       }
 
       async function openFile(fileId) {
@@ -956,6 +1052,54 @@
         }
       });
 
+      // Theme toggle listeners
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setTheme(btn.dataset.theme);
+        });
+      });
+
+      // Initialize theme buttons
+      updateThemeButtons(getStoredTheme());
+
+      // Live reload via Server-Sent Events
+      function setupLiveReload() {
+        const eventSource = new EventSource('/api/events');
+
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'reload') {
+              console.log('File changed:', data.file);
+              // If we're not editing, reload the current file
+              if (!state.isEditing && state.selectedId) {
+                // Check if the changed file is the current file
+                const changedFile = data.file.replace(/\\/g, '/');
+                if (state.selectedId === changedFile || changedFile.endsWith(state.selectedId)) {
+                  openFile(state.selectedId);
+                }
+              }
+              // Always refresh the file list in case files were added/removed
+              fetchFiles().then(() => {
+                // Re-select current file to update the list highlighting
+                if (state.selectedId) {
+                  renderList();
+                }
+              });
+            }
+          } catch (err) {
+            console.error('Live reload error:', err);
+          }
+        };
+
+        eventSource.onerror = () => {
+          // Reconnect after a delay if connection is lost
+          eventSource.close();
+          setTimeout(setupLiveReload, 2000);
+        };
+      }
+
+      setupLiveReload();
       fetchConfig();
       fetchFiles();
     </script>

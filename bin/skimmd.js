@@ -12,6 +12,7 @@ import { program } from "commander";
 import { marked } from "marked";
 import hljs from "highlight.js";
 import TurndownService from "turndown";
+import { watch } from "chokidar";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -119,11 +120,82 @@ function applySingleFileFilter(files, singleFile) {
   return filtered;
 }
 
+// Store SSE clients for live reload
+const sseClients = new Set();
+
+function broadcastReload(filePath) {
+  const message = JSON.stringify({ type: "reload", file: filePath });
+  for (const client of sseClients) {
+    client.write(`data: ${message}\n\n`);
+  }
+}
+
+function setupFileWatcher(folderPath, singleFile) {
+  const watchPath = singleFile ? singleFile.absolutePath : folderPath;
+
+  const watcher = watch(watchPath, {
+    ignored: [/node_modules/, /\.git/],
+    persistent: true,
+    ignoreInitial: true,
+    depth: 10,
+  });
+
+  function isMarkdownFile(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    return [".md", ".markdown", ".txt"].includes(ext);
+  }
+
+  watcher.on("change", (filePath) => {
+    if (!isMarkdownFile(filePath)) return;
+    const relative = path.relative(folderPath, filePath);
+    console.log(`File changed: ${relative}`);
+    broadcastReload(relative);
+  });
+
+  watcher.on("add", (filePath) => {
+    if (!isMarkdownFile(filePath)) return;
+    const relative = path.relative(folderPath, filePath);
+    console.log(`File added: ${relative}`);
+    broadcastReload(relative);
+  });
+
+  watcher.on("unlink", (filePath) => {
+    if (!isMarkdownFile(filePath)) return;
+    const relative = path.relative(folderPath, filePath);
+    console.log(`File removed: ${relative}`);
+    broadcastReload(relative);
+  });
+
+  watcher.on("ready", () => {
+    console.log("File watcher ready");
+  });
+
+  watcher.on("error", (error) => {
+    console.error("Watcher error:", error);
+  });
+
+  return watcher;
+}
+
 async function createServer(options) {
   const { folderPath, singleFile, initialFile } = options;
   const app = express();
 
   app.use(express.json({ limit: "2mb" }));
+
+  // SSE endpoint for live reload
+  app.get("/api/events", (req, res) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    sseClients.add(res);
+
+    req.on("close", () => {
+      sseClients.delete(res);
+    });
+  });
 
   app.get("/api/config", (_req, res) => {
     res.json({
@@ -235,8 +307,8 @@ async function createServer(options) {
 }
 
 program
-  .name("mdr")
-  .description("CLI-only Markdown reader")
+  .name("skimmd")
+  .description("Instant markdown preview with GitHub-style rendering")
   .argument("[path]", "Path to markdown file or folder", ".")
   .option("-p, --port <number>", "Port to run on (default: auto-detect)")
   .option("--no-open", "Don't open browser automatically")
@@ -274,14 +346,17 @@ program
         : await getPort({ port: [3000, 3001, 3002, 3003, 3004, 3005] });
 
       const app = await createServer({ folderPath, singleFile, initialFile });
+      const watcher = setupFileWatcher(folderPath, singleFile);
+
       const server = app.listen(port, () => {
         const url = new URL(`http://localhost:${port}`);
         if (initialFile) {
           url.searchParams.set("file", initialFile);
         }
 
-        console.log(`mdr running at ${url.toString()}`);
+        console.log(`skimmd running at ${url.toString()}`);
         console.log(`Serving markdown from: ${folderPath}`);
+        console.log(`Watching for changes...`);
 
         if (options.open) {
           open(url.toString());
@@ -289,6 +364,7 @@ program
       });
 
       const shutdown = () => {
+        watcher.close();
         server.close(() => process.exit(0));
       };
 

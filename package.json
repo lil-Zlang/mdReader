@@ -1,16 +1,37 @@
 {
-  "name": "mdr",
+  "name": "skimmd",
   "version": "1.0.0",
-  "private": true,
-  "description": "CLI-only Markdown reader that serves a local browser UI",
+  "description": "Instant markdown preview in your browser. Zero config, GitHub-style rendering, inline editing.",
   "type": "module",
   "bin": {
-    "mdr": "./bin/mdr.js"
+    "skimmd": "./bin/skimmd.js"
   },
   "scripts": {
-    "start": "node bin/mdr.js"
+    "start": "node bin/skimmd.js"
+  },
+  "keywords": [
+    "markdown",
+    "preview",
+    "github",
+    "readme",
+    "cli",
+    "viewer",
+    "editor",
+    "md",
+    "gfm"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lil-Zlang/skimmd.git"
+  },
+  "homepage": "https://github.com/lil-Zlang/skimmd#readme",
+  "bugs": {
+    "url": "https://github.com/lil-Zlang/skimmd/issues"
   },
   "dependencies": {
+    "chokidar": "^5.0.0",
     "commander": "^12.1.0",
     "express": "^4.19.2",
     "fast-glob": "^3.3.3",
