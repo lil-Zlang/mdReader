@@ -247,8 +247,8 @@
         padding: 20px;
         box-shadow: var(--shadow);
         overflow: hidden;
-        display: grid;
-        grid-template-rows: auto 1fr;
+        display: flex;
+        flex-direction: column;
         gap: 16px;
         min-height: 0;
         max-height: 100vh;
@@ -334,13 +334,7 @@
         gap: 16px;
         min-height: 0;
         overflow-y: auto;
-      }
-
-      .document {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        min-height: 0;
+        flex: 1;
       }
 
       .doc-header {
@@ -497,10 +491,8 @@
         list-style: none;
         padding: 0;
         margin: 0;
-        overflow-y: auto;
         display: grid;
         gap: 6px;
-        max-height: 300px;
       }
 
       .toc-item {
@@ -556,6 +548,300 @@
 
       .hidden {
         display: none;
+      }
+
+      /* Formatting Toolbar */
+      .format-toolbar {
+        display: none;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 12px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+
+      body.editing .format-toolbar {
+        display: flex;
+      }
+
+      .format-toolbar .divider {
+        width: 1px;
+        height: 20px;
+        background: var(--border);
+        margin: 0 6px;
+      }
+
+      .format-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--ink);
+        font-family: var(--font-ui);
+        font-size: 14px;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .format-btn:hover {
+        background: var(--hover-bg);
+      }
+
+      .format-btn.active {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .format-btn svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+
+      .format-btn.bold {
+        font-weight: 700;
+      }
+
+      .format-btn.italic {
+        font-style: italic;
+      }
+
+      .format-btn.strike {
+        text-decoration: line-through;
+      }
+
+      .format-dropdown {
+        position: relative;
+      }
+
+      .format-dropdown-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--ink);
+        font-family: var(--font-ui);
+        font-size: 13px;
+        transition: background 0.15s ease;
+      }
+
+      .format-dropdown-btn:hover {
+        background: var(--hover-bg);
+      }
+
+      .format-dropdown-btn svg {
+        width: 12px;
+        height: 12px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+
+      .format-dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 4px;
+        min-width: 140px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        box-shadow: var(--shadow);
+        z-index: 100;
+        padding: 4px;
+      }
+
+      .format-dropdown.open .format-dropdown-menu {
+        display: block;
+      }
+
+      .format-dropdown-item {
+        display: block;
+        width: 100%;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--ink);
+        font-family: var(--font-ui);
+        font-size: 13px;
+        text-align: left;
+        transition: background 0.15s ease;
+      }
+
+      .format-dropdown-item:hover {
+        background: var(--hover-bg);
+      }
+
+      .format-dropdown-item.h1 {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .format-dropdown-item.h2 {
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .format-dropdown-item.h3 {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .word-count {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 0 8px;
+      }
+
+      /* Width toggle buttons */
+      .width-toggle {
+        display: flex;
+        gap: 2px;
+        padding: 2px;
+        background: var(--pill-bg);
+        border-radius: 6px;
+        border: 1px solid var(--border);
+      }
+
+      .width-btn {
+        padding: 4px 8px;
+        border: none;
+        background: transparent;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        color: var(--muted);
+        transition: background 0.15s ease, color 0.15s ease;
+        font-family: var(--font-ui);
+      }
+
+      .width-btn:hover {
+        color: var(--ink);
+      }
+
+      .width-btn.active {
+        background: var(--panel);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Focus button */
+      .focus-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--muted);
+        font-family: var(--font-ui);
+        font-size: 12px;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .focus-btn:hover {
+        background: var(--hover-bg);
+        color: var(--ink);
+      }
+
+      .focus-btn svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+
+      .focus-btn .exit-icon,
+      .focus-btn .exit-text {
+        display: none;
+      }
+
+      body.focus-mode .focus-btn .focus-icon,
+      body.focus-mode .focus-btn .focus-text {
+        display: none;
+      }
+
+      body.focus-mode .focus-btn .exit-icon,
+      body.focus-mode .focus-btn .exit-text {
+        display: inline;
+      }
+
+      /* Document section */
+      .document {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      /* Format toolbar - positioned outside scroll area so it stays fixed */
+      body.editing .format-toolbar {
+        display: flex;
+        z-index: 50;
+        box-shadow: var(--shadow-soft);
+        flex-shrink: 0;
+      }
+
+      /* Focus mode */
+      body.focus-mode .app {
+        grid-template-columns: 1fr;
+      }
+
+      body.focus-mode .sidebar {
+        display: none;
+      }
+
+      body.focus-mode .viewer-body {
+        grid-template-columns: minmax(0, 1fr) 260px;
+      }
+
+      body.focus-mode .viewer {
+        max-width: 100%;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+      }
+
+      body.focus-mode .viewer-header {
+        display: none;
+      }
+
+      body.focus-mode .doc-header {
+        display: none;
+      }
+
+      body.focus-mode .inspector {
+        display: none;
+      }
+
+      /* Content width modes - only apply in editing mode */
+      body.editing .content.fixed-width {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      body.editing .content.full-width {
+        max-width: none;
       }
 
       .theme-toggle {
@@ -661,6 +947,62 @@
             <button class="button secondary hidden" id="cancel">Cancel</button>
           </div>
         </div>
+        <div class="format-toolbar" id="format-toolbar">
+              <button class="format-btn bold" data-cmd="bold" title="Bold (Cmd+B)">B</button>
+              <button class="format-btn italic" data-cmd="italic" title="Italic (Cmd+I)">I</button>
+              <button class="format-btn strike" data-cmd="strikeThrough" title="Strikethrough">S</button>
+              <div class="divider"></div>
+              <div class="format-dropdown" id="heading-dropdown">
+                <button class="format-dropdown-btn" id="heading-btn">
+                  <span id="heading-label">Body</span>
+                  <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="format-dropdown-menu">
+                  <button class="format-dropdown-item h1" data-heading="h1">Heading 1</button>
+                  <button class="format-dropdown-item h2" data-heading="h2">Heading 2</button>
+                  <button class="format-dropdown-item h3" data-heading="h3">Heading 3</button>
+                  <button class="format-dropdown-item" data-heading="p">Body</button>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <button class="format-btn" data-cmd="formatBlock" data-value="blockquote" title="Blockquote">
+                <svg viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg>
+              </button>
+              <button class="format-btn" data-cmd="insertUnorderedList" title="Bullet List">
+                <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><circle cx="4" cy="6" r="1" fill="currentColor"></circle><circle cx="4" cy="12" r="1" fill="currentColor"></circle><circle cx="4" cy="18" r="1" fill="currentColor"></circle></svg>
+              </button>
+              <button class="format-btn" data-cmd="insertOrderedList" title="Numbered List">
+                <svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><text x="4" y="7" font-size="6" fill="currentColor" stroke="none">1</text><text x="4" y="13" font-size="6" fill="currentColor" stroke="none">2</text><text x="4" y="19" font-size="6" fill="currentColor" stroke="none">3</text></svg>
+              </button>
+              <div class="divider"></div>
+              <button class="format-btn" id="link-btn" title="Insert Link (Cmd+K)">
+                <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+              </button>
+              <div class="divider"></div>
+              <div class="format-dropdown" id="insert-dropdown">
+                <button class="format-dropdown-btn">
+                  <span>Insert</span>
+                  <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="format-dropdown-menu">
+                  <button class="format-dropdown-item" data-insert="code">Code Block</button>
+                  <button class="format-dropdown-item" data-insert="hr">Horizontal Rule</button>
+                  <button class="format-dropdown-item" data-insert="table">Table</button>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div class="width-toggle" id="width-toggle">
+                <button class="width-btn active" data-width="fixed" title="Fixed width">Fixed</button>
+                <button class="width-btn" data-width="full" title="Full width">Full</button>
+              </div>
+              <button class="focus-btn" id="focus-btn" title="Focus mode (Esc to exit)">
+                <svg class="focus-icon" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                <svg class="exit-icon" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg>
+                <span class="focus-text">Focus</span>
+                <span class="exit-text">Exit</span>
+              </button>
+              <div class="word-count" id="word-count">0 words</div>
+            </div>
         <div class="viewer-body">
           <section class="document">
             <div class="doc-header">
@@ -730,6 +1072,15 @@
       const docTitleEl = document.getElementById("doc-title");
       const docPathEl = document.getElementById("doc-path");
       const editBadgeEl = document.getElementById("edit-badge");
+      const viewerBodyEl = document.querySelector(".viewer-body");
+      const formatToolbarEl = document.getElementById("format-toolbar");
+      const wordCountEl = document.getElementById("word-count");
+      const headingDropdown = document.getElementById("heading-dropdown");
+      const headingLabel = document.getElementById("heading-label");
+      const insertDropdown = document.getElementById("insert-dropdown");
+      const linkBtn = document.getElementById("link-btn");
+      const widthToggle = document.getElementById("width-toggle");
+      const focusBtn = document.getElementById("focus-btn");
 
       let tocTimer = null;
       let scrollRaf = null;
@@ -876,6 +1227,8 @@
           editToggleEl.classList.add("hidden");
           saveEl.classList.remove("hidden");
           cancelEl.classList.remove("hidden");
+          updateWordCount();
+          headingLabel.textContent = "Body";
         } else {
           contentEl.contentEditable = "false";
           contentEl.classList.remove("editing");
@@ -883,6 +1236,13 @@
           saveEl.classList.add("hidden");
           cancelEl.classList.add("hidden");
         }
+      }
+
+      function updateWordCount() {
+        const text = contentEl.innerText || "";
+        const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+        const count = words.length;
+        wordCountEl.textContent = `${count} ${count === 1 ? 'word' : 'words'}`;
       }
 
       async function saveFile() {
@@ -950,10 +1310,12 @@
 
       function updateActiveFromScroll() {
         if (!state.tocHeadings || state.tocHeadings.length === 0) return;
-        const scrollTop = contentEl.scrollTop;
+        const scrollTop = viewerBodyEl.scrollTop;
+        const containerTop = viewerBodyEl.getBoundingClientRect().top;
         let current = state.tocHeadings[0];
         for (const heading of state.tocHeadings) {
-          if (heading.offsetTop - 24 <= scrollTop) {
+          const headingTop = heading.getBoundingClientRect().top - containerTop;
+          if (headingTop <= 50) {
             current = heading;
           } else {
             break;
@@ -1034,10 +1396,11 @@
       contentEl.addEventListener("input", () => {
         if (state.isEditing) {
           scheduleTocRefresh();
+          updateWordCount();
         }
       });
 
-      contentEl.addEventListener("scroll", handleContentScroll);
+      viewerBodyEl.addEventListener("scroll", handleContentScroll);
 
       window.addEventListener("resize", () => {
         updateActiveFromScroll();
@@ -1061,6 +1424,206 @@
 
       // Initialize theme buttons
       updateThemeButtons(getStoredTheme());
+
+      // Formatting toolbar functions
+      function execFormat(cmd, value = null) {
+        contentEl.focus();
+        document.execCommand(cmd, false, value);
+        scheduleTocRefresh();
+        updateWordCount();
+      }
+
+      function formatHeading(tag) {
+        contentEl.focus();
+        if (tag === 'p') {
+          document.execCommand('formatBlock', false, 'p');
+          headingLabel.textContent = 'Body';
+        } else {
+          document.execCommand('formatBlock', false, tag);
+          headingLabel.textContent = tag.toUpperCase();
+        }
+        scheduleTocRefresh();
+      }
+
+      function insertLink() {
+        const url = prompt('Enter URL:', 'https://');
+        if (url) {
+          document.execCommand('createLink', false, url);
+        }
+      }
+
+      function insertCodeBlock() {
+        const code = document.createElement('pre');
+        const codeInner = document.createElement('code');
+        codeInner.textContent = 'code here';
+        code.appendChild(codeInner);
+
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(code);
+          range.setStartAfter(code);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
+
+      function insertHorizontalRule() {
+        document.execCommand('insertHorizontalRule', false, null);
+      }
+
+      function insertTable() {
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+        const headerRow = document.createElement('tr');
+        const bodyRow = document.createElement('tr');
+
+        for (let i = 0; i < 3; i++) {
+          const th = document.createElement('th');
+          th.textContent = `Header ${i + 1}`;
+          headerRow.appendChild(th);
+
+          const td = document.createElement('td');
+          td.textContent = `Cell ${i + 1}`;
+          bodyRow.appendChild(td);
+        }
+
+        thead.appendChild(headerRow);
+        tbody.appendChild(bodyRow);
+        table.appendChild(thead);
+        table.appendChild(tbody);
+
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(table);
+          range.setStartAfter(table);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
+
+      function closeAllDropdowns() {
+        document.querySelectorAll('.format-dropdown').forEach(d => d.classList.remove('open'));
+      }
+
+      // Format button clicks
+      formatToolbarEl.querySelectorAll('.format-btn[data-cmd]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const cmd = btn.dataset.cmd;
+          const value = btn.dataset.value || null;
+          execFormat(cmd, value);
+        });
+      });
+
+      // Heading dropdown
+      headingDropdown.querySelector('.format-dropdown-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeAllDropdowns();
+        headingDropdown.classList.toggle('open');
+      });
+
+      headingDropdown.querySelectorAll('.format-dropdown-item').forEach(item => {
+        item.addEventListener('click', () => {
+          formatHeading(item.dataset.heading);
+          closeAllDropdowns();
+        });
+      });
+
+      // Insert dropdown
+      insertDropdown.querySelector('.format-dropdown-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeAllDropdowns();
+        insertDropdown.classList.toggle('open');
+      });
+
+      insertDropdown.querySelectorAll('.format-dropdown-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const insert = item.dataset.insert;
+          if (insert === 'code') insertCodeBlock();
+          else if (insert === 'hr') insertHorizontalRule();
+          else if (insert === 'table') insertTable();
+          closeAllDropdowns();
+          scheduleTocRefresh();
+        });
+      });
+
+      // Link button
+      linkBtn.addEventListener('click', () => {
+        insertLink();
+      });
+
+      // Close dropdowns when clicking outside
+      document.addEventListener('click', () => {
+        closeAllDropdowns();
+      });
+
+      // Keyboard shortcuts for formatting
+      contentEl.addEventListener('keydown', (event) => {
+        if (!state.isEditing) return;
+
+        if (event.metaKey || event.ctrlKey) {
+          switch (event.key.toLowerCase()) {
+            case 'b':
+              event.preventDefault();
+              execFormat('bold');
+              break;
+            case 'i':
+              event.preventDefault();
+              execFormat('italic');
+              break;
+            case 'k':
+              event.preventDefault();
+              insertLink();
+              break;
+          }
+        }
+      });
+
+      // Width toggle
+      function setContentWidth(mode) {
+        contentEl.classList.remove('fixed-width', 'full-width');
+        contentEl.classList.add(mode + '-width');
+        widthToggle.querySelectorAll('.width-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.width === mode);
+        });
+        localStorage.setItem('skimmd-width', mode);
+      }
+
+      widthToggle.querySelectorAll('.width-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setContentWidth(btn.dataset.width);
+        });
+      });
+
+      // Initialize width from localStorage
+      const savedWidth = localStorage.getItem('skimmd-width') || 'fixed';
+      setContentWidth(savedWidth);
+
+      // Focus mode
+      function toggleFocusMode() {
+        const isEnabled = document.body.classList.toggle('focus-mode');
+        if (isEnabled) {
+          contentEl.focus();
+        }
+      }
+
+      focusBtn.addEventListener('click', () => {
+        toggleFocusMode();
+      });
+
+      // Escape key to exit focus mode
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && document.body.classList.contains('focus-mode')) {
+          document.body.classList.remove('focus-mode');
+        }
+      });
 
       // Live reload via Server-Sent Events
       function setupLiveReload() {

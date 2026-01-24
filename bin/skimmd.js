@@ -363,9 +363,23 @@ program
         }
       });
 
-      const shutdown = () => {
-        watcher.close();
+      const shutdown = async () => {
+        console.log("\nShutting down...");
+
+        // Close all SSE connections first
+        for (const client of sseClients) {
+          client.end();
+        }
+        sseClients.clear();
+
+        // Close file watcher (returns Promise in chokidar v5)
+        await watcher.close();
+
+        // Close server with timeout fallback
         server.close(() => process.exit(0));
+
+        // Force exit if server doesn't close within 2 seconds
+        setTimeout(() => process.exit(0), 2000);
       };
 
       process.on("SIGINT", shutdown);
