@@ -912,9 +912,281 @@
           align-items: flex-start;
         }
       }
+
+      /* File browser modal */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 200;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-overlay.open {
+        display: flex;
+      }
+
+      .modal {
+        background: var(--panel);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        width: 90%;
+        max-width: 600px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .modal-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .modal-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .modal-close:hover {
+        background: var(--hover-bg);
+        color: var(--ink);
+      }
+
+      .modal-close svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+
+      .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .path-input-wrap {
+        display: flex;
+        gap: 8px;
+      }
+
+      .path-input {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+        background: var(--panel-strong);
+        color: var(--ink);
+        font-family: var(--font-mono);
+        outline: none;
+      }
+
+      .path-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(47, 111, 237, 0.15);
+      }
+
+      .path-go-btn {
+        padding: 10px 16px;
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #fff;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: var(--font-ui);
+        transition: background 0.15s ease;
+      }
+
+      .path-go-btn:hover {
+        background: var(--accent-strong);
+      }
+
+      .browser-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--folder-bg);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+
+      .browser-back {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .browser-back:hover {
+        background: var(--hover-bg);
+        color: var(--ink);
+      }
+
+      .browser-back svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+
+      .browser-path {
+        flex: 1;
+        font-size: 12px;
+        color: var(--muted);
+        font-family: var(--font-mono);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .browser-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .browser-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .browser-item:hover {
+        background: var(--hover-bg);
+      }
+
+      .browser-item svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+        flex-shrink: 0;
+        color: var(--muted);
+      }
+
+      .browser-item.folder svg {
+        color: var(--accent);
+      }
+
+      .browser-item-name {
+        flex: 1;
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .browser-empty {
+        padding: 20px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .open-file-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        padding: 10px;
+        border: 1px dashed var(--border);
+        background: transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--muted);
+        font-family: var(--font-ui);
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        margin-bottom: 8px;
+      }
+
+      .open-file-btn:hover {
+        background: var(--hover-bg);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .open-file-btn svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
     </style>
   </head>
   <body>
+    <!-- File browser modal -->
+    <div class="modal-overlay" id="file-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">Open File</div>
+          <button class="modal-close" id="modal-close">
+            <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="path-input-wrap">
+            <input type="text" class="path-input" id="path-input" placeholder="Paste file path or type to search...">
+            <button class="path-go-btn" id="path-go-btn">Open</button>
+          </div>
+          <div class="browser-nav">
+            <button class="browser-back" id="browser-back" title="Go up">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div class="browser-path" id="browser-path">~</div>
+          </div>
+          <ul class="browser-list" id="browser-list"></ul>
+        </div>
+      </div>
+    </div>
+
     <div class="app">
       <aside class="sidebar">
         <div class="brand">
@@ -922,6 +1194,10 @@
           <div class="pill" id="file-count">0 files</div>
         </div>
         <div class="folder" id="folder"></div>
+        <button class="open-file-btn" id="open-file-btn">
+          <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          Open File...
+        </button>
         <div class="search">
           <input class="filter" id="filter" placeholder="Filter files..." />
           <div class="search-hint">Cmd+K</div>
@@ -1057,6 +1333,8 @@
         currentContent: "",
         currentHtml: "",
         tocHeadings: [],
+        openedFile: null, // For files opened via file browser (absolute path)
+        browserPath: "",
       };
 
       const fileListEl = document.getElementById("file-list");
@@ -1081,6 +1359,14 @@
       const linkBtn = document.getElementById("link-btn");
       const widthToggle = document.getElementById("width-toggle");
       const focusBtn = document.getElementById("focus-btn");
+      const openFileBtnEl = document.getElementById("open-file-btn");
+      const fileModal = document.getElementById("file-modal");
+      const modalCloseBtn = document.getElementById("modal-close");
+      const pathInput = document.getElementById("path-input");
+      const pathGoBtn = document.getElementById("path-go-btn");
+      const browserBackBtn = document.getElementById("browser-back");
+      const browserPathEl = document.getElementById("browser-path");
+      const browserListEl = document.getElementById("browser-list");
 
       let tocTimer = null;
       let scrollRaf = null;
@@ -1168,6 +1454,7 @@
 
       async function openFile(fileId) {
         state.selectedId = fileId;
+        state.openedFile = null; // Clear externally opened file
         renderList();
         setEditMode(false);
         metaEl.textContent = "";
@@ -1246,6 +1533,11 @@
       }
 
       async function saveFile() {
+        // Handle externally opened files
+        if (state.openedFile) {
+          return saveExternalFile();
+        }
+
         if (!state.selectedId) return;
         const html = contentEl.innerHTML;
         saveEl.disabled = true;
@@ -1618,11 +1910,194 @@
         toggleFocusMode();
       });
 
-      // Escape key to exit focus mode
+      // Escape key to exit focus mode or close modal
       document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && document.body.classList.contains('focus-mode')) {
-          document.body.classList.remove('focus-mode');
+        if (event.key === 'Escape') {
+          if (fileModal.classList.contains('open')) {
+            closeFileModal();
+          } else if (document.body.classList.contains('focus-mode')) {
+            document.body.classList.remove('focus-mode');
+          }
         }
+      });
+
+      // File browser modal
+      function openFileModal() {
+        fileModal.classList.add('open');
+        pathInput.value = '';
+        pathInput.focus();
+        browsePath(state.browserPath || '');
+      }
+
+      function closeFileModal() {
+        fileModal.classList.remove('open');
+      }
+
+      async function browsePath(dirPath) {
+        try {
+          const res = await fetch(`/api/browse?path=${encodeURIComponent(dirPath)}`);
+          if (!res.ok) {
+            const err = await res.json();
+            console.error('Browse error:', err.error);
+            return;
+          }
+          const data = await res.json();
+          state.browserPath = data.current;
+          browserPathEl.textContent = data.current;
+          renderBrowserList(data.items, data.parent);
+        } catch (err) {
+          console.error('Browse error:', err);
+        }
+      }
+
+      function renderBrowserList(items, parentPath) {
+        browserListEl.innerHTML = '';
+
+        if (items.length === 0) {
+          const empty = document.createElement('li');
+          empty.className = 'browser-empty';
+          empty.textContent = 'No markdown files in this folder';
+          browserListEl.appendChild(empty);
+          return;
+        }
+
+        items.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'browser-item' + (item.isDirectory ? ' folder' : '');
+
+          const icon = item.isDirectory
+            ? '<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>'
+            : '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
+
+          li.innerHTML = `${icon}<span class="browser-item-name">${item.name}</span>`;
+
+          li.addEventListener('click', () => {
+            if (item.isDirectory) {
+              browsePath(item.path);
+            } else {
+              openExternalFile(item.path);
+              closeFileModal();
+            }
+          });
+
+          browserListEl.appendChild(li);
+        });
+      }
+
+      async function openExternalFile(filePath) {
+        try {
+          const res = await fetch(`/api/open-file?path=${encodeURIComponent(filePath)}`);
+          if (!res.ok) {
+            alert('Failed to open file');
+            return;
+          }
+          const data = await res.json();
+
+          // Clear selection from file list
+          state.selectedId = null;
+          state.openedFile = {
+            path: data.path,
+            name: data.name,
+          };
+
+          renderList();
+
+          state.currentContent = data.content || '';
+          state.currentHtml = data.html || '';
+          contentEl.classList.remove('empty');
+          contentEl.innerHTML = state.currentHtml;
+          editToggleEl.disabled = false;
+
+          // Update header
+          const displayName = data.name.replace(/\.md$/i, '');
+          docTitleEl.textContent = displayName || 'Untitled';
+          docPathEl.textContent = data.path;
+          document.title = displayName ? `${displayName} - skimmd` : 'skimmd';
+
+          if (data.metadata) {
+            const updated = new Date(data.metadata.modifiedAt).toLocaleString();
+            metaEl.textContent = `Last updated ${updated}`;
+          }
+
+          buildToc(contentEl);
+          setEditMode(false);
+        } catch (err) {
+          console.error('Open file error:', err);
+          alert('Failed to open file');
+        }
+      }
+
+      async function saveExternalFile() {
+        if (!state.openedFile) return;
+        const html = contentEl.innerHTML;
+        saveEl.disabled = true;
+        try {
+          const res = await fetch(`/api/open-file?path=${encodeURIComponent(state.openedFile.path)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ html }),
+          });
+          if (!res.ok) {
+            alert('Failed to save file');
+            return;
+          }
+          const data = await res.json();
+          state.currentContent = data.content || '';
+          state.currentHtml = data.html || html;
+          contentEl.innerHTML = state.currentHtml;
+          if (data.metadata) {
+            const updated = new Date(data.metadata.modifiedAt).toLocaleString();
+            metaEl.textContent = `Last updated ${updated}`;
+          }
+          buildToc(contentEl);
+          setEditMode(false);
+        } finally {
+          saveEl.disabled = false;
+        }
+      }
+
+      // Open file button
+      openFileBtnEl.addEventListener('click', openFileModal);
+
+      // Modal close
+      modalCloseBtn.addEventListener('click', closeFileModal);
+      fileModal.addEventListener('click', (e) => {
+        if (e.target === fileModal) closeFileModal();
+      });
+
+      // Path input
+      pathInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const value = pathInput.value.trim();
+          if (value) {
+            // Check if it looks like a file path
+            if (value.endsWith('.md') || value.endsWith('.markdown') || value.endsWith('.txt')) {
+              openExternalFile(value);
+              closeFileModal();
+            } else {
+              browsePath(value);
+            }
+          }
+        }
+      });
+
+      pathGoBtn.addEventListener('click', () => {
+        const value = pathInput.value.trim();
+        if (value) {
+          if (value.endsWith('.md') || value.endsWith('.markdown') || value.endsWith('.txt')) {
+            openExternalFile(value);
+            closeFileModal();
+          } else {
+            browsePath(value);
+          }
+        }
+      });
+
+      // Browser back button
+      browserBackBtn.addEventListener('click', () => {
+        const current = state.browserPath;
+        const parent = current.split('/').slice(0, -1).join('/') || '/';
+        browsePath(parent);
       });
 
       // Live reload via Server-Sent Events

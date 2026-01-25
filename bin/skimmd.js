@@ -297,6 +297,129 @@ async function createServer(options) {
     }
   });
 
+  // Browse directories and files
+  app.get("/api/browse", async (req, res) => {
+    const browsePath = req.query.path || process.env.HOME || "/";
+    try {
+      const resolvedPath = path.resolve(browsePath);
+      const stats = await fsp.stat(resolvedPath);
+
+      if (!stats.isDirectory()) {
+        return res.status(400).json({ error: "Path is not a directory" });
+      }
+
+      const entries = await fsp.readdir(resolvedPath, { withFileTypes: true });
+      const items = [];
+
+      for (const entry of entries) {
+        // Skip hidden files/folders
+        if (entry.name.startsWith(".")) continue;
+
+        const fullPath = path.join(resolvedPath, entry.name);
+        const isDir = entry.isDirectory();
+        const ext = path.extname(entry.name).toLowerCase();
+        const isMarkdown = [".md", ".markdown", ".txt"].includes(ext);
+
+        // Only include directories and markdown files
+        if (isDir || isMarkdown) {
+          items.push({
+            name: entry.name,
+            path: fullPath,
+            isDirectory: isDir,
+          });
+        }
+      }
+
+      // Sort: directories first, then files, alphabetically
+      items.sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      res.json({
+        current: resolvedPath,
+        parent: path.dirname(resolvedPath),
+        items,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to browse" });
+    }
+  });
+
+  // Open any markdown file by absolute path
+  app.get("/api/open-file", async (req, res) => {
+    const filePath = req.query.path;
+    if (!filePath || typeof filePath !== "string") {
+      return res.status(400).json({ error: "Missing file path" });
+    }
+
+    try {
+      const resolvedPath = path.resolve(filePath);
+      const stats = await fsp.stat(resolvedPath);
+
+      if (!stats.isFile()) {
+        return res.status(400).json({ error: "Path is not a file" });
+      }
+
+      const content = await fsp.readFile(resolvedPath, "utf-8");
+      const html = marked.parse(content);
+
+      res.json({
+        path: resolvedPath,
+        name: path.basename(resolvedPath),
+        content,
+        html,
+        metadata: {
+          size: stats.size,
+          modifiedAt: stats.mtime,
+          createdAt: stats.birthtime,
+        },
+      });
+    } catch (error) {
+      res.status(404).json({ error: error instanceof Error ? error.message : "File not found" });
+    }
+  });
+
+  // Save any markdown file by absolute path
+  app.put("/api/open-file", async (req, res) => {
+    const filePath = req.query.path;
+    const { content, html } = req.body || {};
+
+    if (!filePath || typeof filePath !== "string") {
+      return res.status(400).json({ error: "Missing file path" });
+    }
+
+    let finalContent = content;
+    if (typeof html === "string") {
+      finalContent = turndownService.turndown(html);
+    }
+    if (typeof finalContent !== "string") {
+      return res.status(400).json({ error: "Missing content" });
+    }
+
+    try {
+      const resolvedPath = path.resolve(filePath);
+      await fsp.writeFile(resolvedPath, finalContent, "utf-8");
+      const stats = await fsp.stat(resolvedPath);
+      const renderedHtml = marked.parse(finalContent);
+
+      res.json({
+        path: resolvedPath,
+        name: path.basename(resolvedPath),
+        content: finalContent,
+        html: renderedHtml,
+        metadata: {
+          size: stats.size,
+          modifiedAt: stats.mtime,
+          createdAt: stats.birthtime,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to save file" });
+    }
+  });
+
   app.use(express.static(path.join(__dirname, "..", "public")));
 
   app.get("*", (_req, res) => {
