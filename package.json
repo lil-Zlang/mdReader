@@ -1,6 +1,6 @@
 {
   "name": "skimmd",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Instant markdown preview in your browser. Zero config, GitHub-style rendering, inline editing.",
   "type": "module",
   "bin": {
